@@ -13,17 +13,79 @@ import sys
 import base64
 import os
 import time
+import math
+
+
+def main():
+    """命令行入口：python3 getdata2025.py [步骤名]
+    
+    步骤名:
+        test        单校测试（默认）
+        getAll      全部步骤依次执行
+        school      抓学校清单 (getAllSchool)
+        score       抓录取分数线 (insertSchoolScore)
+        major       抓专业分数线 (getMajorScoreNear5Byhread)
+        plan        抓招生计划 (getCollegePlan)
+    """
+    steps = {
+        "school": getAllSchool,
+        "score": insertSchoolScore,
+        "major": lambda: getMajorScoreNear5Byhread("江西"),
+        "plan": getCollegePlan,
+        "test": lambda: [create_tables(), getMajorScore("南昌大学", "江西", 2024, "物理类")][-1],
+        "getAll": lambda: [
+            create_tables(),
+            getAllSchool(),
+            insertSchoolScore(),
+            getMajorScoreNear5Byhread("江西"),
+            getCollegePlan()
+        ],
+    }
+    
+    step = sys.argv[1] if len(sys.argv) > 1 else "test"
+    
+    if step == "getAll":
+        print("=" * 50)
+        print("开始全量爬取：建表 → 学校清单 → 录取分 → 专业分 → 招生计划")
+        print("=" * 50)
+        create_tables()
+        print("\n--- 第1步：学校清单 ---")
+        getAllSchool()
+        print("\n--- 第2步：录取分数线 ---")
+        insertSchoolScore()
+        print("\n--- 第3步：专业分数线 ---")
+        getMajorScoreNear5Byhread("江西")
+        print("\n--- 第4步：招生计划 ---")
+        getCollegePlan()
+        print("\n" + "=" * 50)
+        print("全量爬取完成！")
+        print("=" * 50)
+    elif step in steps:
+        print(f"执行步骤: {step}")
+        steps[step]()
+    else:
+        print(f"未知步骤: {step}")
+        print(f"可用步骤: {', '.join(steps.keys())}")
 
 
 #学校清单
 # schoolListUrl="https://gaokao.baidu.com/gk/gkschool/list?province=&city=&batch=&character=&type=&education=&nature=&needFilter=0&rn=10&"
 schoolListUrl="https://gaokao.baidu.com/gk/gkschool/list?rn=10&"
-#分数线，针对浙江3+3
-schoolScoreUrl="https://gaokao.baidu.com/gk/gkschool/schoolscore?curriculum=3%2B3综合&"
+#分数线
+# 江西高考制度：2020-2023 旧高考(理科/文科)，2024起 新高考3+1+2(物理类/历史类)
+# 根据年份自动选择 curriculum 参数
+def get_curriculum_list(year):
+    # 返回 (curriculum_display, curriculum_api_value) 列表
+    if int(year) >= 2024:
+        return [("物理类", "物理类"), ("历史类", "历史类")]
+    else:
+        return [("理科", "理科"), ("文科", "文科")]
+
+schoolScoreUrl="https://gaokao.baidu.com/gk/gkschool/schoolscore?"
 # 参数pn-页数，school-中文学校名，province-省，year-年份
-schoolMajorScoreUrl="https://gaokao.baidu.com/gk/gkschool/majorscore?rn=10&curriculum=&subject=&sortType&version=2&needFilter=1&"
+schoolMajorScoreUrl="https://gaokao.baidu.com/gk/gkschool/majorscore?rn=10&subject=&sortType&version=2&needFilter=1&"
 # 参数pn-第几条记录开始，query-中文学校名，province-省，year-年份,curriculum-课程类型,3+3综合,rn-每页记录数
-schoolPlanUrl="https://gaokao.baidu.com/gk/gkschool/getrecruitingscheme?curriculum=3%2B3综合"
+schoolPlanUrl="https://gaokao.baidu.com/gk/gkschool/getrecruitingscheme?"
 
 schoolFieldList=["\"college_name\"" ,"\"rankTypeShow\"" ,"rankType","rank",\
     "globalRank","\"uniqueRank\"","province","city","location",\
@@ -43,42 +105,147 @@ schoolPlanFieldList=["major_name","province",\
 					 "curriculum","category","year",\
 					 "batch_name","enroll_num","tuition","lengthOfSchooling","selectSubjects"]
 
+def create_tables():
+    """创建所有数据表（如不存在）"""
+    dbconn = DBConn()
+    ddl_statements = [
+        '''CREATE TABLE IF NOT EXISTS college_info (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            logourl TEXT, college_name TEXT, rankTypeShow TEXT,
+            rankType TEXT, rank TEXT, globalRank TEXT, uniqueRank TEXT,
+            province TEXT, city TEXT, location TEXT, school_type TEXT,
+            education TEXT, nature TEXT, batch TEXT, score_city TEXT,
+            score_list TEXT, tag TEXT, logo BLOB
+        )''',
+        '''CREATE TABLE IF NOT EXISTS college_detail (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            school_id TEXT, name TEXT, detail TEXT
+        )''',
+        '''CREATE TABLE IF NOT EXISTS schoolscore (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            legalName TEXT, province TEXT, year TEXT, curriculum TEXT,
+            batchName TEXT, enrollType TEXT, minScore TEXT,
+            minScoreOrder TEXT, minCha TEXT, enrollNum TEXT
+        )''',
+        '''CREATE TABLE IF NOT EXISTS majorscore (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            legalName TEXT, majorName TEXT, province TEXT, year TEXT,
+            curriculum TEXT, batchName TEXT, tags TEXT, minScore TEXT,
+            minScoreOrder TEXT, simpleMajorName TEXT, majorNameDesc TEXT,
+            simplifySpecialCourse TEXT, specialCourse TEXT, majorGroup TEXT
+        )''',
+        '''CREATE TABLE IF NOT EXISTS college_plan (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            legalName TEXT, major_name TEXT, province TEXT,
+            curriculum TEXT, category TEXT, year TEXT, batch_name TEXT,
+            enroll_num TEXT, tuition TEXT, lengthOfSchooling TEXT,
+            selectSubjects TEXT
+        )''',
+        '''CREATE TABLE IF NOT EXISTS crawl_skip (
+            school_name TEXT,
+            year TEXT,
+            curriculum TEXT,
+            table_name TEXT,
+            checked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (school_name, year, curriculum, table_name)
+        )'''
+    ]
+    for sql in ddl_statements:
+        dbconn.execSql(sql)
+    print("数据库表创建/确认完成 ✓")
+
+
+def is_skipped(school, year, curriculum, table):
+    """查询 crawl_skip 表，确认该组合是否已确认无数据"""
+    dbconn = DBConn()
+    r = dbconn.execQuery(
+        f"SELECT 1 FROM crawl_skip WHERE school_name='{school}' AND year='{year}' AND curriculum='{curriculum}' AND table_name='{table}'"
+    )
+    return len(r) > 0
+
+
+def mark_skipped(school, year, curriculum, table):
+    """记录该组合已确认无数据"""
+    dbconn = DBConn()
+    dbconn.execSql(
+        f"INSERT OR IGNORE INTO crawl_skip(school_name, year, curriculum, table_name) VALUES('{school}','{year}','{curriculum}','{table}')"
+    )
+
+
+def create_unique_indexes():
+    """为4张表创建唯一索引，支持增量更新"""
+    create_tables()
+    dbconn = DBConn()
+    indexes = [
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_college_info_name ON college_info(college_name)",
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_schoolscore_uniq ON schoolscore(legalName, province, year, curriculum, batchName, enrollType)",
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_majorscore_uniq ON majorscore(legalName, majorName, province, year, curriculum, batchName)",
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_college_plan_uniq ON college_plan(legalName, major_name, province, year, batch_name)"
+    ]
+    for sql in indexes:
+        try:
+            dbconn.execSql(sql)
+        except Exception as e:
+            print(f"创建索引警告: {e}")
+    print("唯一索引创建完成 ✓")
+
 # ======获取高校信息
 def getSchoolList(pageno):
-	url=schoolListUrl+"pn="+str(pageno)
-	# print(url)
-	# print(pageno)
-	response=requests.get(url)
-	# print(response)
-	respText=response.text
-	# print(respText)
-	respJson=json.loads(respText)
-	# print(respJson["status"])
-	
-	# print(respJson["data"]["ranking"]["tRow"][0]["college_name"])
-	return respJson["data"]["ranking"]["tRow"]
+    url = schoolListUrl+"pn="+str(pageno)
+    for attempt in range(3):
+        try:
+            response=requests.get(url, timeout=30)
+            respJson=json.loads(response.text)
+            return respJson["data"]["ranking"]["tRow"]
+        except Exception as e:
+            print(f"  获取第{pageno}页失败 (第{attempt+1}次): {e}")
+            if attempt < 2:
+                time.sleep(3)
+    return None
+
+
+def has_data(table, conditions):
+    """检查数据库中是否已存在指定条件的记录，避免重复 API 请求"""
+    dbconn = DBConn()
+    where = " AND ".join([f"{k}='{v}'" for k, v in conditions.items()])
+    sql = f"SELECT 1 FROM {table} WHERE {where} LIMIT 1"
+    result = dbconn.execQuery(sql)
+    return len(result) > 0
+
 
 # 更新所有学校信息
 def getAllSchool():
+	# 先创建唯一索引，支持增量更新
+	create_unique_indexes()
 
-	# deleteAllSchool()
+	# 从 API 获取真实总数，计算最大页数
+	import json
+	try:
+		r = requests.get(schoolListUrl+"pn=1", timeout=15)
+		total = json.loads(r.text)["data"]["pageInfo"]["total"]
+	except:
+		total = 3052
+	# 计算最大页数：统一用 rn=10
+	MAX_PAGE = math.ceil(total / 10)
+	dbconn = DBConn()
+	existing = dbconn.execQuery("select count(1) from college_info")
+	existing_count = existing[0][0] if existing else 0
+	pageno = (existing_count // 10) + 1
+	count = existing_count
 
-	bFlag=True
-	# pageno=1
-	pageno=1
-	count=0
-	while(bFlag):
+	if pageno > 1:
+		print(f"数据库已有 {existing_count} 所，共 {total} 所，从第 {pageno}/{MAX_PAGE} 页继续...")
+
+	while pageno <= MAX_PAGE:
 		data=getSchoolList(pageno)
-		if len(data)==0 :
-			bFlag=False
+		if data is None or len(data)==0 :
+			pageno += 1
+			continue
 		for key in range(len(data)):
 			count=count+1
+			insertSchool(data[key], skip_logo=True)
 
-			# print(count,data[key]["college_name"])
-			# print(data[key])
-			insertSchool(data[key])
-
-		print("第",pageno,"页")
+		print(f"第 {pageno}/{MAX_PAGE} 页 (已处理 {count}/{total} 所学校)")
 		time.sleep(1)
 		pageno=pageno+1
 
@@ -87,11 +254,11 @@ def deleteAllSchool():
 	dbconn=DBConn()
 	dbconn.execSql(sqlstr)
 
-def insertSchool(schoolInfo):
+def insertSchool(schoolInfo, skip_logo=False):
 	# dbconn=DBConn()
 	# print(schoolInfo["college_name"])
 
-	sqlstr="insert into college_info("
+	sqlstr="insert or replace into college_info("
 
 	values="values("
 
@@ -109,25 +276,29 @@ def insertSchool(schoolInfo):
 	values=values+"'"+str(schoolInfo["logo"])+"',"
 	# print(values)
 
-    #下载图片文件并保存进数据库2022.12.20
-	logoUrl=schoolInfo["logo"]
-	a=urlparse(logoUrl)
-	file_path=a.path
-	filename=os.path.basename(a.path)
-	urllib.request.urlretrieve(logoUrl,filename=filename)
-	
-    # 打开图片编码成base64的字节码后存入
-	jpg_byte=None
 	content=None
-	with open(filename,'rb') as f:
-		jpg_byte=f.read()
-		content=base64.b64encode(jpg_byte)
+	if not skip_logo:
+		#下载图片文件并保存进数据库2022.12.20（加超时和容错）
+		logoUrl=schoolInfo["logo"]
+		try:
+			a=urlparse(logoUrl)
+			filename=os.path.basename(a.path)
+			urllib.request.urlretrieve(logoUrl, filename=filename, timeout=10)
+			
+			# 打开图片编码成base64的字节码后存入
+			jpg_byte=None
+			content=None
+			with open(filename,'rb') as f:
+				jpg_byte=f.read()
+				content=base64.b64encode(jpg_byte)
 
-	#删除文件
-	os.remove(filename)
+			#删除文件
+			os.remove(filename)
+		except Exception as e:
+			print(f"  logo下载失败(跳过): {e}")
+			content=None
 
     #插入数据库
-	#==================================
 	try:
 		sqlstr=sqlstr[0:len(sqlstr)-1]+")\n"+values[0:len(values)-1]+")"
 		dbconn=DBConn()
@@ -136,17 +307,18 @@ def insertSchool(schoolInfo):
 		print(sqlstr)
 		raise e
 	
-    #更新数据库logo
-	college_name=schoolInfo["college_name"]
-	sqlstr1="update college_info set logo=? where college_name=?"
-	dbconn=DBConn()
-	dbconn.conn.execute(sqlstr1,(content,college_name))
-	dbconn.conn.commit()
+    #如果logo下载成功，更新数据库logo
+	if content:
+		college_name=schoolInfo["college_name"]
+		sqlstr1="update college_info set logo=? where college_name=?"
+		dbconn=DBConn()
+		dbconn.conn.execute(sqlstr1,(content,college_name))
+		dbconn.conn.commit()
 
 	print(schoolInfo["college_name"],"数据更新完成")
 	
 def getAllSchoolName():
-	sqlstr="select college_name from college_info order by id limit 100 offset 2900"
+	sqlstr="select college_name from college_info order by id"
 
 	dbconn=DBConn()
 	schools=dbconn.execQuery(sqlstr)
@@ -156,22 +328,18 @@ def getAllSchoolName():
 	
 # ===========================
 # 录取分数线
-def getScore(college_name,province,year):
-	url=schoolScoreUrl+"school="+str(college_name)+"&province="+str(province)+"&year="+str(year)
-	print(url)
-	response=requests.get(url)
-	respText=response.text
-	# print(respText)
-	respJson=json.loads(respText)
-	retJson=None
+def getScore(college_name, province, year, curriculum):
 	try:
+		url=schoolScoreUrl+"curriculum="+str(curriculum)+"&school="+str(college_name)+"&province="+str(province)+"&year="+str(year)
+		print(url)
+		response=requests.get(url, timeout=(10, 30))
+		respText=response.text
+		respJson=json.loads(respText)
 		retJson=respJson["data"]["school_score"]["dataList"]
+		return retJson
 	except Exception as e:
-		print(e)
-		print(respJson)
+		print(f"  {college_name} {year} {curriculum}: 跳过 ({e})")
 		return None
-	
-	return retJson
 
 def deleteAllSchoolScore():
 	sqlstr="delete from schoolscore"
@@ -180,68 +348,115 @@ def deleteAllSchoolScore():
 
 # 获取学校分数线
 def insertSchoolScore():
-	deleteAllSchoolScore()
+	# 创建唯一索引，支持增量更新
+	create_unique_indexes()
 
-	schoolNames=getAllSchoolName()
+	# 查询有哪些学校尚未入库 schoolscore（用 LEFT JOIN 找缺失）
+	dbconn = DBConn()
+	missing = dbconn.execQuery(
+		"SELECT c.college_name FROM college_info c "
+		"LEFT JOIN (SELECT DISTINCT legalName FROM schoolscore) s ON c.college_name = s.legalName "
+		"LEFT JOIN (SELECT DISTINCT school_name FROM crawl_skip WHERE table_name='schoolscore') sk ON c.college_name = sk.school_name "
+		"WHERE s.legalName IS NULL AND sk.school_name IS NULL "
+		"ORDER BY c.id"
+	)
+	schoolNames = [(row[0],) for row in missing]
+	
+	if not schoolNames:
+		print("schoolscore 数据已完整，无需补爬")
+		return
+
+	total_missing = len(schoolNames)
+	print(f"schoolscore 还需爬取 {total_missing} 所学校")
 
 	startTime=datetime.now()
 
-	# 更新2020-2024年各高校录取分数线数据
 	count=0
+	school_idx=0
 	for schoolName in schoolNames:
-		year=2024
-		while year>2019 :
-			schoolscores=getScore(schoolName[0],"浙江",year)
-			if schoolscores==None :
-				year=year-1
-				continue
-			# print(schoolscores)
-			for schoolscore in schoolscores :
+		school_idx+=1
+		if school_idx % 10 == 0:
+			print(f"[{school_idx}/{total_missing}] 当前: {schoolName[0]} (已入库 {count} 行)")
+		year=2025
+		while year>=2021 :
+			# 江西每年分文理/物理历史两类，分别爬取
+			for cur_label, cur_api in get_curriculum_list(str(year)):
+				# 跳过已确认无数据的组合
+				if is_skipped(schoolName[0], str(year), cur_api, "schoolscore"):
+					continue
+				schoolscores=getScore(schoolName[0],"江西",year,cur_api)
+				if schoolscores==None :
+					mark_skipped(schoolName[0], str(year), cur_api, "schoolscore")
+					continue
+				# print(schoolscores)
+				for schoolscore in schoolscores :
 
-				sqlstr="insert into schoolscore("
+					sqlstr="insert or ignore into schoolscore("
 
-				values="values("
+					values="values("
 
-				if schoolscore['year']==str(year):
+					if schoolscore['year']==str(year):
+						#插入数据库
+						for num in schoolScoreFieldList :
+							fieldname=num.replace('\"','')
+							if fieldname in schoolscore:
+								sqlstr=sqlstr+num+","
+								values=values+"'"+str(schoolscore[fieldname]).replace('\'','\'\'')+"',"
+					sqlstr=sqlstr[0:len(sqlstr)-1]+")\n"+values[0:len(values)-1]+")"
+					count=count+1
 					#插入数据库
-					for num in schoolScoreFieldList :
-						fieldname=num.replace('\"','')
-						if fieldname in schoolscore:
-							sqlstr=sqlstr+num+","
-							values=values+"'"+str(schoolscore[fieldname]).replace('\'','\'\'')+"',"
-				sqlstr=sqlstr[0:len(sqlstr)-1]+")\n"+values[0:len(values)-1]+")"
-				count=count+1
-				#插入数据库
-				# print(sqlstr,"\n")
-				print(count)
-				# if count%100 == 0 :
-				# 	print("已更新：",count,"\n")
-				dbconn=DBConn()
-				dbconn.execSql(sqlstr)
-				# print(schoolscore,"\n")
+					# print(sqlstr,"\n")
+					print(count)
+					# if count%100 == 0 :
+					# 	print("已更新：",count,"\n")
+					dbconn=DBConn()
+					dbconn.execSql(sqlstr)
+					# print(schoolscore,"\n")
 				# print(sqlstr,"\n")
 
 			year=year-1
+			time.sleep(0.1)
 	endTime=datetime.now()
 	print("已更新",count,"条高校录取分数线，耗时：",(endTime-startTime),"\n")
 
 #================================================================
 # 获取专业分数线
-def getMajorScore(college_name,province,year):
-	url=schoolMajorScoreUrl+"school="+str(college_name)+"&province="+str(province)+"&year="+str(year)
+def getMajorScore(college_name, province, year, curriculum):
+	# 跳过已确认无数据的组合
+	if is_skipped(college_name, str(year), curriculum, "majorscore"):
+		return
+	# 跳过已入库的(学校,年份,类型)组合
+	if has_data("majorscore", {"legalName": college_name, "province": province, "year": str(year), "curriculum": curriculum}):
+		print(f"  跳过 {college_name} {year} {curriculum}")
+		return
+
+	url=schoolMajorScoreUrl+"curriculum="+str(curriculum)+"&school="+str(college_name)+"&province="+str(province)+"&year="+str(year)
 
 	bFlag=True
 	pn=1
 	# delMajorScore(college_name,province)
 
 	while bFlag :
-		response=requests.get(url+"&pn="+str(pn))
+		# 请求重试（最多3次）
+		for retry in range(3):
+			try:
+				response=requests.get(url+"&pn="+str(pn), timeout=(10, 30))
+				break
+			except requests.exceptions.ReadTimeout:
+				if retry < 2:
+					print(f"  超时重试 {retry+1}/3: {college_name} {year} pn={pn}")
+					time.sleep(5)
+				else:
+					print(f"  超时放弃: {college_name} {year} pn={pn}")
+					bFlag=False
+					break
 		print(url+"&pn="+str(pn))
 		pn=pn+1
 		respText=response.text
 		# print(respText)
 		respJson=json.loads(respText)
 		print(url)
+		time.sleep(0.05)
 		majorscores=None
 		try:
 			if respJson["errno"]!=0:
@@ -252,18 +467,21 @@ def getMajorScore(college_name,province,year):
 		# print(majorscores)
 
 			if len(majorscores)<=0 :
+				mark_skipped(college_name, str(year), curriculum, "majorscore")
 				bFlag=False
 			else:
 				if majorscores[0]["year"]!=str(year) :
 					bFlag=False
 				else:
 					for majorscore in majorscores :
-						# insertMajorScore(majorscore)
-						print(majorscore)
-					print(college_name,"-",province,"-",year,"-","查询成功！")
-		except:
+						insertMajorScore(majorscore)
+						# print(majorscore)
+					print(college_name,"-",province,"-",year,"-",curriculum,"-","查询成功！")
+		except Exception as e:
 			bFlag=False
-			print(college_name,"-",province,"-",year,"-","查询出错！")
+			mark_skipped(college_name, str(year), curriculum, "majorscore")
+			if 'dataList' not in str(e):
+				print(college_name,"-",province,"-",year,"-",f"查询出错: {e}")
 			
 def delMajorScore(college_name,province):
 	sqlstr="delete from majorscore where \"legalName\"='"+college_name+"' and province='"+province+"'"
@@ -279,7 +497,7 @@ def delAllMajorScore():
     # 插入数据库
 def insertMajorScore(majorscore):
 	# print(majorscore)
-	sqlstr="insert into majorscore("
+	sqlstr="insert or ignore into majorscore("
 
 	values="values("
 
@@ -296,12 +514,14 @@ def insertMajorScore(majorscore):
 	dbconn=DBConn()
 	dbconn.execSql(sqlstr)
 	
-#近5年的专业成绩,默认5个线程执行
-def getMajorScoreNear5(college_name,province):
-	year=2024
-	while year>=2019:
-		getMajorScore(college_name,province,str(year))
+#近5年的专业成绩，按年份和文理分类分别爬取
+def getMajorScoreNear5(college_name, province):
+	year=2025
+	while year>=2021:
+		for cur_label, cur_api in get_curriculum_list(str(year)):
+			getMajorScore(college_name, province, str(year), cur_api)
 		year=year-1
+		time.sleep(0.1)
 
 def getMajorScoreNear5s(college_names,province,threadno):
 
@@ -310,9 +530,28 @@ def getMajorScoreNear5s(college_names,province,threadno):
 		getMajorScoreNear5(college_name,province)
 
 # 大学名字、省份、线程数
-def getMajorScoreNear5Byhread(province,threadnum=5):
-	#获取所有大学清单
-	schoolNames=getAllSchoolName()
+def getMajorScoreNear5Byhread(province, threadnum=1):
+	# 创建唯一索引，支持增量更新
+	create_unique_indexes()
+
+	# 查询有哪些学校尚未入库 majorscore
+	dbconn = DBConn()
+	missing = dbconn.execQuery(
+		"SELECT c.college_name FROM college_info c "
+		"INNER JOIN (SELECT DISTINCT legalName FROM schoolscore) sc ON c.college_name = sc.legalName "
+		"LEFT JOIN (SELECT DISTINCT legalName FROM majorscore) s ON c.college_name = s.legalName "
+		"LEFT JOIN (SELECT DISTINCT school_name FROM crawl_skip WHERE table_name='majorscore') sk ON c.college_name = sk.school_name "
+		"WHERE s.legalName IS NULL AND sk.school_name IS NULL ORDER BY c.id"
+	)
+	schoolNames = [row[0] for row in missing]
+	
+	if not schoolNames:
+		print("majorscore 数据已完整，无需补爬")
+		return
+	
+	total_missing = len(schoolNames)
+	print(f"majorscore 还需爬取 {total_missing} 所学校")
+
 	schoolNameList=[]
 	i=0
 	while i<threadnum:
@@ -323,7 +562,7 @@ def getMajorScoreNear5Byhread(province,threadnum=5):
 	index=0
 	count=len(schoolNames)
 	for schoolName in schoolNames:
-		schoolNameList[index % threadnum].append(schoolName[0])
+		schoolNameList[index % threadnum].append(schoolName)
 		index=index+1
 
 
@@ -339,27 +578,44 @@ def getMajorScoreNear5Byhread(province,threadnum=5):
 		threadingList[i].start()
 		i=i+1
 
+	#等待所有线程完成
+	for t in threadingList:
+		t.join()
+	print("所有线程执行完毕！")
+
 #================================================================
 # 获取学校招生计划
-def getCollegePlanFromUrl(school,province,year,pn,rn):
-	# 参数pn-第几条记录开始，query-中文学校名，province-省，year-年份,curriculum-课程类型,3+3综合,rn-每页记录数
+def getCollegePlanFromUrl(school, province, year, curriculum, pn, rn):
+	# 参数pn-第几条记录开始，query-中文学校名，province-省，year-年份,curriculum-课程类型,rn-每页记录数
 	
-	url=schoolPlanUrl+"&query="+school+"&province="+province+"&year="+str(year)+"&pn="+str(pn)+"&rn="+str(rn)
-	try:
-		response=requests.get(url)
-		respText=response.text
-		respJson=json.loads(respText)
-		ret=respJson["data"]["list"]
-		# print(respText)
-		return ret
-	except:
-		print(url)
-		return None
+	url=schoolPlanUrl+"curriculum="+str(curriculum)+"&query="+school+"&province="+province+"&year="+str(year)+"&pn="+str(pn)+"&rn="+str(rn)
+	for attempt in range(3):
+		try:
+			response=requests.get(url, timeout=(10, 30))
+			respJson=json.loads(response.text)
+			if respJson.get("errno") != 0:
+				return None
+			ret=respJson["data"]["list"]
+			return ret
+		except requests.exceptions.ReadTimeout:
+			if attempt < 2:
+				print(f"  超时重试 {attempt+1}/3: {school} {year}")
+				time.sleep(3)
+			else:
+				print(f"  超时放弃: {school} {year}")
+				return None
+		except Exception as e:
+			if attempt < 2:
+				time.sleep(1)
+			else:
+				print(f"招生计划获取失败: {e}")
+				print(url)
+				return None
 	
 
 # 插入招生计划数据库
 def insertCollegePlan(collegePlan,schoolName):
-	sqlstr="insert into college_plan(legalName,"
+	sqlstr="insert or ignore into college_plan(legalName,"
 
 	values="values('"+schoolName+"',"
 
@@ -377,34 +633,63 @@ def insertCollegePlan(collegePlan,schoolName):
 	dbconn.execSql(sqlstr)
 	
 def getCollegePlan():
-	#获取所有大学清单
-	schoolNames=getAllSchoolName()
+	# 创建唯一索引，支持增量更新
+	create_unique_indexes()
+
+	# 查询有哪些学校尚未入库 college_plan
+	dbconn = DBConn()
+	missing = dbconn.execQuery(
+		"SELECT c.college_name FROM college_info c "
+		"LEFT JOIN (SELECT DISTINCT legalName FROM college_plan) s ON c.college_name = s.legalName "
+		"LEFT JOIN (SELECT DISTINCT school_name FROM crawl_skip WHERE table_name='college_plan') sk ON c.college_name = sk.school_name "
+		"WHERE s.legalName IS NULL AND sk.school_name IS NULL ORDER BY c.id"
+	)
+	schoolNames = missing
 	
-	for schoolName in schoolNames:
-		province="浙江"
-		year=2024
-		while year>2019 :
-			rn=50
-			pn=0
-			flag=True
-			while flag :
-				collegePlans=getCollegePlanFromUrl(schoolName[0],province,year,pn,rn)
-				if collegePlans==None or len(collegePlans)<=0 :
-					flag=False
-				else:
-					for collegePlan in collegePlans :
-						# print(collegePlan)
-						insertCollegePlan(collegePlan,schoolName[0])
-					print(schoolName[0],"-",province,"-",year,"-","查询成功！")
-					pn=pn+rn
+	if not schoolNames:
+		print("college_plan 数据已完整，无需补爬")
+		return
+	
+	total_missing = len(schoolNames)
+	print(f"college_plan 还需爬取 {total_missing} 所学校")
+	
+	for idx, schoolName in enumerate(schoolNames, 1):
+		if idx % 50 == 0 or idx == 1:
+			print(f"[{idx}/{total_missing}] 当前: {schoolName[0]}")
+		province="江西"
+		year=2026
+		while year>=2021 :
+			# 江西每年分文理/物理历史两类，分别爬取
+			for cur_label, cur_api in get_curriculum_list(str(year)):
+				# 跳过已确认无数据的组合
+				if is_skipped(schoolName[0], str(year), cur_api, "college_plan"):
+					continue
+				# 跳过已有数据的组合
+				if has_data("college_plan", {"legalName": schoolName[0], "province": province, "year": str(year), "curriculum": cur_api}):
+					continue
+				rn=50
+				pn=0
+				flag=True
+				while flag :
+					collegePlans=getCollegePlanFromUrl(schoolName[0], province, year, cur_api, pn, rn)
+					if collegePlans==None or len(collegePlans)<=0 :
+						mark_skipped(schoolName[0], str(year), cur_api, "college_plan")
+						flag=False
+					else:
+						for collegePlan in collegePlans :
+							# print(collegePlan)
+							insertCollegePlan(collegePlan,schoolName[0])
+						print(schoolName[0],"-",province,"-",year,"-",cur_label,"-","查询成功！")
+						pn=pn+rn
 			year=year-1
+			time.sleep(0.1)
 		
 
 # insertSchoolScore()
 # getAllSchool()
 # print(getSchoolList(1))
-# getMajorScoreNear5Byhread("浙江")
-getMajorScore("宁波大学","浙江",2024)
-# getMajorScoreNear5Byhread("浙江")
-# getCollegePlanFromUrl("浙江大学","浙江","2024","22","10")
-# getCollegePlan()
+# 取消注释 getMajorScoreNear5Byhread("江西")
+# 单校测试：抓取南昌大学2024年物理类/历史类专业分数线
+
+if __name__ == "__main__":
+    main()

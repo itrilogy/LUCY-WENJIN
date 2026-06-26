@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>鹿溪志愿 - 江西版2025</title>
+<link rel="stylesheet" href="/static/style.css">
+<style>
+/* 多选组件 */
+.multi-wrap{position:relative;min-width:160px}
+.multi-input{display:flex;flex-wrap:wrap;gap:3px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--card);cursor:pointer;min-height:32px;align-items:center}
+.multi-input .ph{color:#999;font-size:13px}
+.multi-input .sel-tag{display:inline-flex;align-items:center;gap:2px;padding:2px 6px;background:var(--primary);color:#fff;border-radius:4px;font-size:12px}
+.multi-input .sel-tag .del{cursor:pointer;font-weight:700;margin-left:2px;font-size:14px;line-height:1}
+.multi-input .sel-tag .del:hover{opacity:.8}
+.multi-drop{display:none;position:absolute;top:100%;left:0;z-index:20;background:var(--card);border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,.1);max-height:200px;overflow-y:auto;min-width:200px;padding:4px;margin-top:2px}
+.multi-drop.show{display:block}
+.multi-drop .opt{padding:6px 12px;cursor:pointer;font-size:13px;border-radius:3px}
+.multi-drop .opt:hover{background:#f1f5f9}
+.multi-drop .opt.chk{background:#eff6ff;color:var(--primary);font-weight:500}
+/* 范围输入框 */
+.range-group{display:flex;align-items:center;gap:4px}
+.range-group input{padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;width:80px;text-align:center}
+.range-group .sep{color:#999;font-size:13px}
+.filter-label{font-size:11px;color:var(--muted);display:block;margin-bottom:1px}
+/* About */
+.overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.45);z-index:100;align-items:center;justify-content:center}
+.about-card{background:var(--card);border-radius:16px;padding:32px 40px;max-width:440px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.2);text-align:center;animation:slideUp .25s ease}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.about-card h2{font-size:20px;margin-bottom:4px;color:var(--text)}
+.about-card .slogan{color:var(--muted);font-size:13px;margin-bottom:16px;letter-spacing:1px}
+.about-card .dv{height:1px;background:var(--border);margin:16px 0}
+.about-card .info{font-size:14px;line-height:1.8;color:var(--text)}
+.about-card .info .lb{color:var(--muted);font-size:11px}
+.about-card .cls{display:inline-block;margin-top:16px;padding:6px 24px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px}
+</style>
+</head>
+<body>
+<div class="sidebar" style="display:flex;flex-direction:column">
+  <h1>🦌 鹿溪志愿 <span style="font-size:11px;font-weight:400;color:#64748b">v1.0</span></h1>
+  <div class="nav">
+    <div class="nav-item active" data-tab><span>🏫</span><span>大学搜索</span></div>
+    <div class="nav-item" data-tab><span>📋</span><span>学校详情</span></div>
+    <div class="nav-item" data-tab><span>📚</span><span>专业反查</span></div>
+    <div class="nav-item" data-tab><span>📝</span><span>招生计划</span></div>
+    <div class="nav-item" data-tab><span>🎯</span><span>志愿推荐</span></div>
+    <div class="nav-item" data-tab><span>💬</span><span>AI分析</span></div>
+  </div>
+  <div class="nav" style="border-top:1px solid #334155;margin-top:auto;padding-top:8px">
+    <div class="nav-item" onclick="showAbout()" style="color:#64748b"><span>ⓘ</span><span>关于</span></div>
+  </div>
+</div>
+
+<div class="main">
+<div class="page active" id="p0">
+  <h2>🏫 大学搜索</h2>
+  <div class="filters" style="flex-wrap:wrap">
+    <input id="f_name" placeholder="学校名称" style="width:160px">
+    <div class="multi-wrap">
+      <div class="multi-input" onclick="td('mdp')"><span class="ph" id="fpph">省份</span></div>
+      <div class="multi-drop" id="mdp"></div>
+    </div>
+    <div class="multi-wrap">
+      <div class="multi-input" onclick="td('mdt')"><span class="ph" id="ftph">类型</span></div>
+      <div class="multi-drop" id="mdt"></div>
+    </div>
+    <div class="multi-wrap">
+      <div class="multi-input" onclick="td('mdn')"><span class="ph" id="fnph">办学</span></div>
+      <div class="multi-drop" id="mdn"></div>
+    </div>
+    <label><input type="checkbox" value="985" class="ftag">985</label>
+    <label><input type="checkbox" value="211" class="ftag">211</label>
+    <label><input type="checkbox" value="双一流" class="ftag">双一流</label>
+    <label><input type="checkbox" value="强基计划" class="ftag">强基</label>
+    <button class="btn" onclick="search(1)">🔍 查询</button>
+  </div>
+  <div id="t0"></div>
+</div>
+
+<div class="page" id="p1">
+  <div class="link" onclick="sw(0)" style="margin-bottom:8px">← 返回搜索</div>
+  <div style="display:flex;gap:8px;margin-bottom:12px">
+    <input id="s_name" placeholder="输入学校名称直接查看详情" style="flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px" onkeydown="if(event.key==='Enter')sd(document.getElementById('s_name').value.trim())">
+    <button class="btn" onclick="sd(document.getElementById('s_name').value.trim())">查看</button>
+  </div>
+  <div id="t1"></div>
+</div>
+
+<div class="page" id="p2">
+  <h2>📚 专业反查</h2>
+  <div class="filters" style="flex-wrap:wrap">
+    <input id="m_name" placeholder="专业名称（模糊搜索）" style="width:220px">
+    <button class="btn" onclick="sm()">🔍 查询</button>
+    <div style="width:100%;display:flex;flex-wrap:wrap;gap:8px;align-items:end;margin-top:4px">
+      <div>
+        <span class="filter-label">年份</span>
+        <div class="multi-wrap" style="min-width:140px">
+          <div class="multi-input" onclick="td('mdy')"><span class="ph" id="myph">年份</span></div>
+          <div class="multi-drop" id="mdy"></div>
+        </div>
+      </div>
+      <div>
+        <span class="filter-label">位次</span>
+        <div class="range-group"><input id="mr_min" placeholder="下限"><span class="sep">—</span><input id="mr_max" placeholder="上限"></div>
+      </div>
+      <div>
+        <span class="filter-label">分数</span>
+        <div class="range-group"><input id="ms_min" placeholder="下限"><span class="sep">—</span><input id="ms_max" placeholder="上限"></div>
+      </div>
+    </div>
+  </div>
+  <div id="t2"></div>
+</div>
+
+<div class="page" id="p3">
+  <h2>📝 招生计划</h2>
+  <div class="filters" style="flex-wrap:wrap">
+    <input id="p_school" placeholder="学校名称" style="width:150px">
+    <input id="p_major" placeholder="专业名称" style="width:150px">
+    <div class="multi-wrap" style="min-width:120px">
+      <div class="multi-input" onclick="td('pdp')"><span class="ph" id="pph">省份</span></div>
+      <div class="multi-drop" id="pdp"></div>
+    </div>
+    <div class="multi-wrap" style="min-width:100px">
+      <div class="multi-input" onclick="td('mdy2')"><span class="ph" id="pyph">年份</span></div>
+      <div class="multi-drop" id="mdy2"></div>
+    </div>
+    <label><input type="checkbox" value="985" class="ptag">985</label>
+    <label><input type="checkbox" value="211" class="ptag">211</label>
+    <label><input type="checkbox" value="双一流" class="ptag">双一流</label>
+    <button class="btn" onclick="sp()">🔍 查询</button>
+  </div>
+  <div id="t3"></div>
+</div>
+
+<div class="page" id="p4">
+  <h2>🎯 志愿推荐</h2>
+  <div class="card">
+    <div style="display:flex;flex-wrap:wrap;gap:16px">
+      <div style="flex:1;min-width:300px">
+        <h3 style="font-size:14px;margin-bottom:8px">基本信息</h3>
+        <div class="filters" style="flex-wrap:wrap">
+          <div class="fg"><label>分数</label><input id="r_score" type="number" placeholder="585" style="width:80px"></div>
+          <div class="fg"><label>位次</label><input id="r_rank" type="number" placeholder="18500" style="width:100px"></div>
+          <div class="fg"><label>首选</label>
+            <label style="font-weight:normal"><input type="radio" name="r_first" value="物理" checked>物理</label>
+            <label style="font-weight:normal"><input type="radio" name="r_first" value="历史">历史</label>
+          </div>
+        </div>
+        <div class="filters" style="margin-top:4px">
+          <span style="font-size:12px;color:var(--muted);white-space:nowrap">再选(按偏好顺序勾选):</span>
+          <label style="font-weight:normal"><input type="checkbox" value="化学" class="r_second">化学</label>
+          <label style="font-weight:normal"><input type="checkbox" value="生物" class="r_second">生物</label>
+          <label style="font-weight:normal"><input type="checkbox" value="政治" class="r_second">政治</label>
+          <label style="font-weight:normal"><input type="checkbox" value="地理" class="r_second">地理</label>
+        </div>
+        <div class="filters" style="margin-top:4px">
+          <span style="font-size:12px;color:var(--muted)">专业关键词:</span>
+          <input id="r_keyword" placeholder="计算机,人工智能" style="width:160px">
+          <span style="font-size:11px;color:#999">逗号分割多个</span>
+          <label style="font-weight:normal;font-size:12px"><input type="radio" name="r_kw_mode" value="optional" checked>可选(优先赋分)</label>
+          <label style="font-weight:normal;font-size:12px"><input type="radio" name="r_kw_mode" value="mandatory">强制(仅显示含关键词)</label>
+        </div>
+      </div>
+      <div style="flex:1;min-width:250px">
+        <h3 style="font-size:14px;margin-bottom:8px">优先级配置</h3>
+        <div class="filters" style="flex-wrap:wrap">
+          <span style="font-size:12px;color:var(--muted)">省份:</span>
+          <select id="r_provs" multiple style="height:60px;font-size:11px;width:140px">
+            <option value="北京">北京</option><option value="上海">上海</option><option value="广东">广东</option>
+            <option value="江苏">江苏</option><option value="浙江">浙江</option><option value="湖北">湖北</option>
+            <option value="湖南">湖南</option><option value="四川">四川</option><option value="福建">福建</option>
+            <option value="安徽">安徽</option><option value="河南">河南</option><option value="山东">山东</option>
+            <option value="天津">天津</option><option value="重庆">重庆</option><option value="陕西">陕西</option>
+            <option value="辽宁">辽宁</option><option value="吉林">吉林</option><option value="黑龙江">黑龙江</option>
+            <option value="河北">河北</option><option value="山西">山西</option><option value="甘肃">甘肃</option>
+            <option value="云南">云南</option><option value="贵州">贵州</option><option value="广西">广西</option>
+            <option value="海南">海南</option><option value="内蒙古">内蒙古</option><option value="新疆">新疆</option>
+            <option value="宁夏">宁夏</option><option value="青海">青海</option><option value="西藏">西藏</option>
+          </select>
+          <span style="font-size:12px;color:var(--muted)">标签模式:</span>
+          <label style="font-weight:normal;font-size:12px"><input type="radio" name="r_tag_mode" value="or" checked>OR(任一)</label>
+          <label style="font-weight:normal;font-size:12px"><input type="radio" name="r_tag_mode" value="and">AND(全部)</label>
+        </div>
+        <div class="filters" style="flex-wrap:wrap">
+          <label style="font-weight:normal"><input type="checkbox" value="985" class="r_tag">985(10分)</label>
+          <label style="font-weight:normal"><input type="checkbox" value="211" class="r_tag">211(8分)</label>
+          <label style="font-weight:normal"><input type="checkbox" value="双一流" class="r_tag">双一流(5分)</label>
+          <label style="font-weight:normal"><input type="checkbox" value="强基计划" class="r_tag">强基(2分)</label>
+        </div>
+        <div class="filters" style="flex-wrap:wrap">
+          <span style="font-size:12px;color:var(--muted)">冲刺激进度:</span>
+          <input id="r_aggr" type="range" min="0" max="100" value="50" style="width:100px" oninput="ag()">
+          <span id="r_ag" style="font-size:12px;color:var(--muted)">50%</span>
+          <span style="font-size:12px;color:var(--muted);margin-left:12px">保底程度:</span>
+          <input id="r_safe" type="range" min="0" max="100" value="50" style="width:100px" oninput="sf()">
+          <span id="r_sf" style="font-size:12px;color:var(--muted)">50%</span>
+          <label style="font-weight:normal;font-size:12px;margin-left:12px"><input type="checkbox" id="r_plan" checked>参考计划(含趋势)</label>
+        </div>
+        <button class="btn" onclick="rec()" style="margin-top:4px">🎯 推荐</button>
+      </div>
+    </div>
+  </div>
+  <div id="rLoading" style="display:none;color:var(--muted);padding:16px">计算中...</div>
+  <div id="rSum"></div>
+  <div id="rRes"></div>
+  <div style="margin-top:8px"><button class="btn btn-sm" onclick="printReport()">🖨️ 导出PDF</button></div>
+</div>
+
+<div class="page" id="p5">
+  <h2>💬 AI 志愿分析</h2>
+  <div id="aiChat" style="background:var(--card);border-radius:8px;padding:16px;min-height:400px;max-height:560px;overflow-y:auto;margin-bottom:12px;display:flex;flex-direction:column;gap:12px">
+    <div class="ai-msg" style="background:#f0f4ff;padding:10px 14px;border-radius:8px;align-self:flex-start;max-width:85%">
+      💡 你好！我是你的高考志愿助手。请问你的高考分数是多少？
+    </div>
+  </div>
+  <div style="display:flex;gap:8px">
+    <input id="aiInput" placeholder="输入你的回答..." style="flex:1;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:14px" onkeydown="if(event.key==='Enter')sendAi()">
+    <button class="btn" onclick="sendAi()">发送</button>
+    <button class="btn" style="background:var(--muted)" onclick="resetAi()">↻ 重置</button>
+  </div>
+</div>
+</div>
+
+<div class="overlay" id="aboutOverlay" onclick="if(event.target===this)hideAbout()" style="display:none">
+  <div class="about-card">
+    <h2>🦌 鹿溪志愿</h2>
+    <div class="slogan">林深见鹿 · 源启清溪</div>
+    <div class="dv"></div>
+    <div class="info">
+      <div class="lb">协作开发</div>
+      <div>鹿溪联合创新实验室</div>
+      <div>洪浩耀 · 江西省上饶市第一中学 · 高三一班</div>
+      <div class="dv"></div>
+      <div class="lb">数据来源</div>
+      <div>百度高考 API / 中国教育在线</div>
+      <div class="lb" style="margin-top:8px">技术栈</div>
+      <div>Flask + SQLite + DeepSeek</div>
+    </div>
+    <div class="dv"></div>
+    <button class="cls" onclick="hideAbout()">知道了</button>
+  </div>
+</div>
+
+<script>
+function showAbout(){
+  var el = document.getElementById('aboutOverlay');
+  if(el) el.style.display = 'flex';
+  else alert('鹿溪志愿 v1.0\n协作开发：鹿溪联合创新实验室 + 洪浩耀\n江西省上饶市第一中学·高三一班');
+}
+function hideAbout(){document.getElementById('aboutOverlay').style.display='none'}
+const N=['p0','p1','p2','p3','p4','p5'], tabs=[];
+document.querySelectorAll('.nav-item[data-tab]').forEach((e,i)=>{tabs.push(e);e.onclick=()=>sw(i)});
+function sw(i){document.querySelectorAll('.page').forEach((p,j)=>p.classList.toggle('active',j===i));tabs.forEach((t,j)=>t.classList.toggle('active',j===i));if(i===0)init();}
+function $(id){return document.getElementById(id)}
+function esc(s){return (s||'').replace(/['"]/g,'')}
+function tg(t){if(!t)return '';const m={'985':'t985','211':'t211','双一流':'tsyl','强基计划':'tqj'};return t.split(',').filter(Boolean).map(x=>{const e=Object.entries(m).find(([k])=>x.includes(k));return `<span class="tag ${e?e[1]:''}">${x.trim()}</span>`}).join(' ');}
+
+// 多选下拉（修复版）
+function td(id){$(id).classList.toggle('show')}
+function buildMulti(containerId, dropId, vals, sel, prefix, onChange){
+  const c=$(containerId), d=$(dropId);
+  // 渲染已选项
+  let html='';
+  if(sel.length){sel.forEach(v=>{html+=`<span class="sel-tag">${v}<span class="del" data-p="${prefix}" data-v="${v}">×</span></span>`;});}
+  else{html='<span class="ph">'+(prefix==='p'?'省份':prefix==='t'?'类型':prefix==='n'?'办学':prefix==='y'?'年份':prefix==='p2'?'省份':prefix==='y2'?'年份':'年份')+'</span>';}
+  c.innerHTML=html;
+  // 绑定删除事件
+  c.querySelectorAll('.del').forEach(el=>{el.onclick=function(e){e.stopPropagation();const p=this.dataset.p,v=this.dataset.v;let arr;if(p==='p')arr=selP;else if(p==='t')arr=selT;else if(p==='n')arr=selN;else if(p==='y')arr=selY;else if(p==='y2')arr=selY2;else return;const idx=arr.indexOf(v);if(idx>-1)arr.splice(idx,1);buildMulti(containerId,dropId,vals,arr,prefix,onChange);if(onChange)onChange();}});
+  // 渲染下拉
+  d.innerHTML=vals.map(v=>`<div class="opt ${sel.includes(v)?'chk':''}" data-v="${v}">${v}</div>`).join('');
+  d.querySelectorAll('.opt').forEach(el=>{el.onclick=function(){const v=this.dataset.v;let arr;if(prefix==='p')arr=selP;else if(prefix==='t')arr=selT;else if(prefix==='n')arr=selN;else if(prefix==='y')arr=selY;else if(prefix==='y2')arr=selY2;else if(prefix==='p2')arr=selP2;else return;const idx=arr.indexOf(v);if(idx>-1)arr.splice(idx,1);else arr.push(v);buildMulti(containerId,dropId,vals,arr,prefix,onChange);if(onChange)onChange();}});
+}
+// 点击外部关闭下拉
+document.addEventListener('click',function(e){document.querySelectorAll('.multi-drop').forEach(d=>{if(!d.parentElement.contains(e.target))d.classList.remove('show')});});
+
+// 状态
+let _f={},selP=[],selT=[],selN=[],selY=[],selY2=[],selP2=[];
+
+async function init(){
+  _f=await fetch('/api/filters').then(r=>r.json());
+  buildMulti('fpph','mdp',_f.provinces,selP,'p',()=>search(1));
+  buildMulti('ftph','mdt',_f.types,selT,'t',()=>search(1));
+  buildMulti('fnph','mdn',_f.natures,selN,'n',()=>search(1));
+  buildMulti('myph','mdy',_f.years,selY,'y',null);
+  buildMulti('pyph','mdy2',_f.planYears,selY2,'y2',null);
+  buildMulti('pph','pdp',_f.provinces,selP2,'p2',null);
+  search(1);
+}
+
+// 大学搜索（后端分页+排序）
+let _schoolSort='rank',_schoolOrder='asc',_schoolPage=1;
+
+async function search(pg){
+  _schoolPage=pg||1;
+  const p=new URLSearchParams();
+  const n=$('f_name').value.trim();if(n)p.set('name',n);
+  selP.forEach(v=>p.append('province',v));selT.forEach(v=>p.append('type',v));selN.forEach(v=>p.append('nature',v));
+  document.querySelectorAll('.ftag:checked').forEach(cb=>p.append('tag',cb.value));
+  p.set('page',_schoolPage);p.set('sort',_schoolSort);p.set('order',_schoolOrder);
+  const d=await fetch('/api/schools?'+p).then(r=>r.json());
+  _schoolData=d.rows;
+  renderSchools();
+  renderPager(d);
+}
+
+function sortBy(col){
+  if(_schoolSort===col) _schoolOrder=_schoolOrder==='asc'?'desc':'asc';
+  else{_schoolSort=col;_schoolOrder='asc';}
+  search(1);
+}
+
+function renderSchools(){
+  const rows=_schoolData;
+  const s=_schoolSort==='rank'?(_schoolOrder==='asc'?'↑':'↓'):'';
+  $('t0').innerHTML=rows.length?`<table><thead><tr><th style="cursor:pointer;user-select:none" onclick="sortBy('rank')">排名 ${s}</th><th>大学</th><th>省份</th><th>标签</th></tr></thead><tbody>`+
+    rows.map(r=>`<tr><td>${r.uniqueRank||'-'}</td><td class="link" onclick="sd('${esc(r.college_name)}')">${r.college_name}</td><td>${r.province||''}</td><td>${tg(r.tag)}</td></tr>`).join('')+
+    '</tbody></table>':'<p style="color:var(--muted)">无匹配</p>';
+}
+
+function renderPager(d){
+  if(d.pages<=1){$('t0').innerHTML+=`<p style="color:var(--muted);font-size:13px;text-align:center;margin-top:8px">共${d.total}所</p>`;return;}
+  let h=`<div style="display:flex;gap:4px;margin-top:12px;justify-content:center;align-items:center;flex-wrap:wrap">`;
+  h+=`<button onclick="search(1)" style="padding:4px 10px;border-radius:4px;border:1px solid var(--border);background:var(--card);cursor:pointer;font-size:13px">«</button>`;
+  let start=Math.max(1,d.page-2),end=Math.min(d.pages,d.page+2);
+  if(start>1){h+=`<span style="font-size:13px;color:var(--muted)">...</span>`;}
+  for(let i=start;i<=end;i++){
+    h+=`<button onclick="search(${i})" style="padding:4px 10px;border-radius:4px;border:1px solid ${i===d.page?'var(--primary)':'var(--border)'};background:${i===d.page?'var(--primary)':'var(--card)'};color:${i===d.page?'#fff':'var(--text)'};cursor:pointer;font-size:13px;font-weight:${i===d.page?'600':'400'}">${i}</button>`;
+  }
+  if(end<d.pages){h+=`<span style="font-size:13px;color:var(--muted)">...</span>`;}
+  h+=`<button onclick="search(${d.pages})" style="padding:4px 10px;border-radius:4px;border:1px solid var(--border);background:var(--card);cursor:pointer;font-size:13px">»</button>`;
+  h+=`<span style="font-size:12px;color:var(--muted);margin-left:6px">共${d.total}所</span></div>`;
+  $('t0').innerHTML+=h;
+}
+
+// 学校详情
+let _sdName='';
+async function sd(name){
+  if(!name) return;
+  document.getElementById('s_name').value=name;
+  _sdName=name;
+  const p=new URLSearchParams();
+  ['r1_min','r1_max','s1_min','s1_max'].forEach(id=>{const v=$(id);if(v)p.set(id.replace('1_','_'),v.value)});
+  const d=await fetch('/api/school/'+encodeURIComponent(name)+'?'+p).then(r=>r.json());
+  let h=`<div class="card"><h2>${name}${tg(d.info?.tag)}</h2>`;
+  h+=`<div class="flt-row" style="margin-top:10px">
+    <div><span class="filter-label">位次</span><div class="range-group"><input id="r1_min" placeholder="下限" oninput="sd('${esc(name)}')"><span class="sep">—</span><input id="r1_max" placeholder="上限" oninput="sd('${esc(name)}')"></div></div>
+    <div><span class="filter-label">分数</span><div class="range-group"><input id="s1_min" placeholder="下限" oninput="sd('${esc(name)}')"><span class="sep">—</span><input id="s1_max" placeholder="上限" oninput="sd('${esc(name)}')"></div></div>
+  </div></div>`;
+  h+=`<div class="cols"><div class="col card"><h3>📊 录取分数线</h3><table><thead><tr><th>年份</th><th>批次</th><th>最低分/位次</th><th>科目</th></tr></thead><tbody>`;
+  d.scores.forEach(s=>h+=`<tr><td>${s.year}</td><td>${s.batchName||''}</td><td>${s.minScore||''}/${s.minScoreOrder||''}</td><td>${s.curriculum||''}</td></tr>`);
+  h+=`</tbody></table></div><div class="col card"><h3>📚 专业分数线</h3><table><thead><tr><th>年份</th><th>专业</th><th>选科</th><th>最低分/位次</th></tr></thead><tbody>`;
+  d.majors.forEach(m=>h+=`<tr><td>${m.year}</td><td>${m.majorName}</td><td>${m.specialCourse||''}</td><td>${m.minScore||''}/${m.minScoreOrder||''}</td></tr>`);
+  h+=`</tbody></table></div></div>`;
+  $('t1').innerHTML=h;sw(1);
+}
+
+// 专业反查
+async function sm(){
+  const p=new URLSearchParams();
+  const m=$('m_name').value.trim();if(m)p.set('major',m);
+  selY.forEach(v=>p.append('year',v));
+  ['mr_min','mr_max','ms_min','ms_max'].forEach(id=>{const v=$(id);if(v&&v.value)p.set(id.replace('mr_','rank_').replace('ms_','score_'),v.value)});
+  const rows=await fetch('/api/major_search?'+p).then(r=>r.json());
+  $('t2').innerHTML=rows.length?'<table><thead><tr><th>年份</th><th>学校</th><th>专业</th><th>选科</th><th>最低分/位次</th></tr></thead><tbody>'+
+    rows.map(r=>`<tr><td>${r.year}</td><td class="link" onclick="sd('${esc(r.legalName)}')">${r.legalName}</td><td>${r.majorName}</td><td>${r.specialCourse||''}</td><td>${r.minScore}/${r.minScoreOrder}</td></tr>`).join('')+
+    '</tbody></table>':'<p style="color:var(--muted)">无匹配</p>';
+  sw(2);
+}
+
+// 招生计划
+async function sp(){
+  const p=new URLSearchParams();
+  const s=$('p_school').value.trim();if(s)p.set('school',s);
+  const m=$('p_major').value.trim();if(m)p.set('major',m);
+  selY2.forEach(v=>p.append('year',v));
+  selP2.forEach(v=>p.append('province',v));
+  document.querySelectorAll('.ptag:checked').forEach(cb=>p.append('tag',cb.value));
+  const rows=await fetch('/api/plan_search?'+p).then(r=>r.json());
+  $('t3').innerHTML=rows.length?'<table><thead><tr><th>年份</th><th>学校</th><th>专业</th><th>计划</th><th>学制</th><th>学费</th><th>选科</th></tr></thead><tbody>'+
+    rows.map(r=>`<tr><td>${r.year}</td><td>${r.legalName}</td><td>${r.major_name}</td><td>${r.enroll_num||''}</td><td>${r.lengthOfSchooling||''}</td><td>${r.tuition||''}</td><td>${r.selectSubjects||''}</td></tr>`).join('')+
+    '</tbody></table>':'<p style="color:var(--muted)">无匹配</p>';
+  sw(3);
+}
+
+// 志愿推荐（新版）
+function ag(){document.getElementById('r_ag').textContent=document.getElementById('r_aggr').value+'%';}
+function sf(){document.getElementById('r_sf').textContent=document.getElementById('r_safe').value+'%';}
+async function rec(){
+  const score=$('r_score').value,rank=$('r_rank').value;
+  if(!score||!rank){alert('请填写分数和位次');return}
+  $('rLoading').style.display='block';$('rRes').innerHTML='';$('rSum').innerHTML='';
+  const first=document.querySelector('input[name=r_first]:checked')?.value||'物理';
+  const seconds=[...document.querySelectorAll('.r_second:checked')].map(cb=>cb.value);
+  const keyword=$('r_keyword').value.trim();
+  const kwMode=document.querySelector('input[name=r_kw_mode]:checked')?.value||'optional';
+  const tagMode=document.querySelector('input[name=r_tag_mode]:checked')?.value||'or';
+  const tags=[...document.querySelectorAll('.r_tag:checked')].map(cb=>cb.value);
+  const provs=[...document.querySelectorAll('#r_provs option:checked')].map(o=>o.value);
+  const aggr=parseInt(document.getElementById('r_aggr').value);
+  const safety=parseInt(document.getElementById('r_safe').value);
+  const usePlan=document.getElementById('r_plan').checked;
+  const r=await fetch('/api/recommend',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({score:+score,rank:+rank,firstSubject:first,secondSubjects:seconds,freeMajor:keyword,freeMajorMode:kwMode,tagMode:tagMode,tags:tags,provinces:provs,aggressiveness:aggr,safety:safety,usePlan:usePlan})}).then(r=>r.json());
+  $('rLoading').style.display='none';
+  if(r.error){$('rRes').innerHTML=`<p style="color:var(--muted)">${r.error}</p>`;return}
+  $('rSum').innerHTML=`<div class="stats"><div class="stat" style="background:#e11d48"><span class="stat-num">${r.reach.length}</span>冲刺</div><div class="stat" style="background:#2563eb"><span class="stat-num">${r.match.length}</span>稳健</div><div class="stat" style="background:#16a34a"><span class="stat-num">${r.safe.length}</span>保底</div></div>
+    <p style="color:var(--muted);margin:8px 0 12px">参考: ${r.year}录取线 + ${r.planYear}招生计划 | 激进${r.aggressiveness||0}% 保底${r.safety||0}%</p>`;
+  const ti=[{k:'reach',l:'冲刺 ⚡',c:'tr'},{k:'match',l:'稳健 ✅',c:'tm'},{k:'safe',l:'保底 🛡️',c:'ts'}];
+  let html='';
+  ti.forEach(t=>{
+    const items=r[t.k];if(!items.length)return;
+    html+=`<div class="tier"><div class="tier-hd ${t.c}">${t.l} (${items.length}所)</div><div class="tier-bd"><table><thead><tr><th>#</th><th>学校</th><th>专业</th><th>专业分/位次</th><th>计划(26/25)</th><th>位次比</th><th>总分</th><th>评分明细</th></tr></thead><tbody>`;
+    items.forEach((item,i)=>{
+      const s=item.scores;
+      html+=`<tr><td>${i+1}</td><td class="link" onclick="sd('${esc(item.school)}')">${item.school}${tg(item.tag)}</td>
+        <td>${item.majorName}</td><td>${item.majorScore||'-'}/${item.majorRank||'-'}</td>
+        <td style="font-size:12px">${item.planThisYear||'-'}/${item.planLastYear||'-'}</td><td>${item.ratio}</td>
+        <td><strong>${s.total}</strong></td>
+        <td style="font-size:12px;color:var(--muted)">位次${s.rankScore} 标签${s.tagScore} 专业${s.majorScore} 计划${s.planScore}</td></tr>`;
+    });
+    html+=`</tbody></table></div></div>`;
+  });
+  $('rRes').innerHTML=html||'<p style="color:var(--muted)">未找到匹配</p>';
+  window.recData = {reach:r.reach, match:r.match, safe:r.safe, year:r.year, drift:r.drift};
+  sw(4);
+}
+
+// 导出PDF（打印）
+function printReport(){
+  const d=window.recData; if(!d||(!d.reach.length&&!d.match.length&&!d.safe.length)){alert('没有可导出的数据');return}
+  let h=`<html><head><meta charset="UTF-8"><title>志愿推荐报告</title><style>
+    body{font:12px sans-serif;padding:20px;color:#333}
+    h2{color:#1e293b;font-size:18px}
+    table{width:100%;border-collapse:collapse;margin:8px 0 16px}
+    th,td{border:1px solid #ddd;padding:5px 8px;text-align:left;font-size:11px}
+    th{background:#f1f5f9;font-weight:600}
+    .tr{color:#e11d48}.tm{color:#2563eb}.ts{color:#16a34a}
+    .t{font-weight:700;font-size:14px;margin:12px 0 4px}
+    @media print{body{font-size:10px}th,td{padding:3px 6px}}
+  </style></head><body>
+  <h2>高考志愿推荐报告（江西2025）</h2>
+  <p>参考: ${d.year}录取线 + ${d.planYear||'?'}招生计划 | 激进 ${d.aggressiveness||50}% 保底 ${d.safety||50}%</p>`;
+  const ti=[{k:'reach',l:'冲刺',c:'tr'},{k:'match',l:'稳健',c:'tm'},{k:'safe',l:'保底',c:'ts'}];
+  ti.forEach(t=>{const items=d[t.k];if(!items.length)return;
+    h+=`<div class="t ${t.c}">${t.l} (${items.length}所)</div><table><thead><tr><th>#</th><th>学校</th><th>专业</th><th>分/位次</th><th>总分</th><th>位次</th><th>标签</th><th>专业</th><th>计划</th></tr></thead><tbody>`;
+    items.forEach((item,i)=>{const s=item.scores;
+      h+=`<tr><td>${i+1}</td><td>${item.school}</td><td>${item.majorName}</td><td>${item.majorScore||'-'}/${item.majorRank||'-'}</td><td><strong>${s.total}</strong></td><td>${s.rankScore}</td><td>${s.tagScore}</td><td>${s.majorScore}</td><td>${s.planScore}</td></tr>`;
+    });h+=`</tbody></table>`;
+  });
+  h+='</body></html>';const w=window.open('','_blank');
+  w.document.write(h);w.document.close();setTimeout(()=>{w.focus();w.print()},500);
+}
+
+// AI 对话
+let aiHistory=[];
+
+function addAiMsg(text,isUser){
+  const d=document.getElementById('aiChat');
+  const div=document.createElement('div');
+  div.style.background=isUser?'#e8f4e8':'#f0f4ff';
+  div.style.padding='10px 14px';div.style.borderRadius='8px';
+  div.style.alignSelf=isUser?'flex-end':'flex-start';
+  div.style.maxWidth='85%';div.style.whiteSpace='pre-wrap';div.style.lineHeight='1.5';
+  div.textContent=text;d.appendChild(div);d.scrollTop=d.scrollHeight;
+}
+
+async function sendAi(){
+  const input=$('aiInput');const msg=input.value.trim();
+  if(!msg)return;input.value='';addAiMsg(msg,true);
+  $('aiLoading')||addAiLoading();
+  try{
+    const r=await fetch('/api/ai/chat',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({message:msg,history:aiHistory})}).then(r=>r.json());
+    removeAiLoading();
+    if(r.reply){aiHistory=r.history;addAiMsg(r.reply,false);}
+  }catch(e){removeAiLoading();addAiMsg('网络错误，请重试',false);}
+}
+
+function addAiLoading(){
+  const d=document.getElementById('aiChat');
+  const div=document.createElement('div');div.id='aiLoading';
+  div.style.padding='10px 14px';div.style.borderRadius='8px';
+  div.style.alignSelf='flex-start';div.style.backgroundColor='#f0f4ff';div.style.maxWidth='85%';
+  div.textContent='⏳ 思考中...';d.appendChild(div);d.scrollTop=d.scrollHeight;
+}
+function removeAiLoading(){const e=$('aiLoading');if(e)e.remove();}
+
+function resetAi(){
+  fetch('/api/ai/reset',{method:'POST'});
+  aiHistory=[];document.getElementById('aiChat').innerHTML=
+    '<div style="background:#f0f4ff;padding:10px 14px;border-radius:8px;align-self:flex-start;max-width:85%">💡 你好！我是你的高考志愿助手。请问你的高考分数是多少？</div>';
+}
+
+init();
+</script>
+</body>
+</html>

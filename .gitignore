@@ -1,0 +1,9 @@
+venv/
+__pycache__/
+*.pyc
+*.sqlite-shm
+*.sqlite-wal
+gaokao2025.sqlite
+*.bak
+.~lock*
+.reasonix/
