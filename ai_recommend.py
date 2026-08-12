@@ -1,123 +1,252 @@
 #!/usr/bin/env python3
-"""DeepSeek AI 志愿分析引擎（Function Calling）"""
+"""DeepSeek AI 志愿分析（多工具 Function Calling + 可选 SSE 流式）"""
 
-import os, json, requests
+from __future__ import annotations
 
-DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY", "")
-DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"
+import json
+from typing import Any, Dict, Generator, List, Optional, Tuple
+
+import requests
+
+from core.config import DEEPSEEK_API_KEY, DEEPSEEK_API_URL
+from core.tools import dispatch_tool
 
 RECOMMEND_TOOL = {
     "type": "function",
     "function": {
         "name": "recommend",
-        "description": "获取高考志愿推荐结果（按分数/位次/选科推荐院校和专业）",
+        "description": "按分数/位次/选科获取冲稳保志愿推荐（含录取概率估算）",
         "parameters": {
             "type": "object",
             "properties": {
                 "score": {"type": "integer", "description": "高考分数"},
                 "rank": {"type": "integer", "description": "全省位次"},
-                "firstSubject": {"type": "string", "enum": ["物理", "历史"], "description": "首选科目"},
+                "firstSubject": {
+                    "type": "string",
+                    "enum": ["物理", "历史"],
+                    "description": "首选科目",
+                },
                 "secondSubjects": {
-                    "type": "array", "items": {"type": "string", "enum": ["化学", "生物", "政治", "地理"]},
-                    "description": "再选科目列表（按偏好顺序）"
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": ["化学", "生物", "政治", "地理"],
+                    },
                 },
-                "freeMajor": {"type": "string", "description": "专业关键词，多个用逗号分隔（如 计算机,人工智能）"},
-                "freeMajorMode": {"type": "string", "enum": ["optional", "mandatory"],
-                    "description": "optional=可选的仅加权, mandatory=至少命中一个关键词才展示"},
-                "provinces": {
-                    "type": "array", "items": {"type": "string"},
-                    "description": "大学所在省份过滤（如 北京,上海）"
+                "freeMajor": {
+                    "type": "string",
+                    "description": "专业关键词或簇名，如 计算机,医学",
                 },
-                "tags": {"type": "array", "items": {"type": "string", "enum": ["985", "211", "双一流", "强基计划"]}},
-                "tagMode": {"type": "string", "enum": ["or", "and"], "description": "or=任一标签匹配, and=全部标签匹配"},
-                "aggressiveness": {"type": "integer", "description": "冲刺激进度 0-100，越大越敢冲好学校"},
-                "safety": {"type": "integer", "description": "保底程度 0-100，越大保底学校越多"},
-                "usePlan": {"type": "boolean", "description": "是否参考招生计划数"}
+                "freeMajorMode": {
+                    "type": "string",
+                    "enum": ["optional", "mandatory"],
+                },
+                "provinces": {"type": "array", "items": {"type": "string"}},
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": ["985", "211", "双一流", "强基计划"],
+                    },
+                },
+                "tagMode": {"type": "string", "enum": ["or", "and"]},
+                "aggressiveness": {"type": "integer"},
+                "safety": {"type": "integer"},
+                "usePlan": {"type": "boolean"},
+                "rankFilterWidth": {"type": "number"},
+                "sortBy": {
+                    "type": "string",
+                    "enum": ["score", "prob"],
+                    "description": "score=综合分, prob=录取概率",
+                },
             },
-            "required": ["score", "rank", "firstSubject"]
-        }
-    }
+            "required": ["score", "rank", "firstSubject"],
+        },
+    },
 }
 
-SYSTEM_PROMPT = """你是一个高考志愿填报助手。
+SEARCH_MAJOR_TOOL = {
+    "type": "function",
+    "function": {
+        "name": "search_major",
+        "description": "按专业名模糊搜索各校该专业录取分/位次",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "major": {"type": "string", "description": "专业关键词"},
+                "year": {"type": "string", "description": "年份，默认上年"},
+                "curriculum": {
+                    "type": "string",
+                    "description": "物理类/历史类/理科/文科",
+                },
+                "limit": {"type": "integer", "description": "最多条数，默认30"},
+            },
+            "required": ["major"],
+        },
+    },
+}
 
-## 工作流程
+COMPARE_TOOL = {
+    "type": "function",
+    "function": {
+        "name": "compare_schools",
+        "description": "对比多所大学的排名、标签、录取线与优势专业",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "schools": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "学校全称列表",
+                },
+                "year": {"type": "string"},
+                "curriculum": {"type": "string", "enum": ["物理类", "历史类"]},
+            },
+            "required": ["schools"],
+        },
+    },
+}
 
-逐一询问以下信息，每次只问一个问题，等用户回答后再问下一个：
+EXPLAIN_TOOL = {
+    "type": "function",
+    "function": {
+        "name": "explain_admission",
+        "description": "根据考生位次与专业录取位次估算录取概率区间",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "studentRank": {"type": "integer"},
+                "majorRank": {"type": "integer"},
+                "planThis": {"type": "number"},
+                "planLast": {"type": "number"},
+                "isNew": {"type": "boolean"},
+            },
+            "required": ["studentRank", "majorRank"],
+        },
+    },
+}
 
-1. 高考分数是多少？
-2. 全省位次是多少？
-3. 选物理类还是历史类？
-4. 再选科目有哪些？（化学/生物/政治/地理，可多选）
-5. 有偏好的专业方向吗？（如"计算机,人工智能"，多个用逗号，可选）
-6. 倾向于哪些省份的大学？（如北京、上海等，可选）
-7. 对学校档次有要求吗？（985/211/双一流/强基，可多选）
-8. （可选追问）想更激进冲好学校，还是更保守求稳？
+ALL_TOOLS = [RECOMMEND_TOOL, SEARCH_MAJOR_TOOL, COMPARE_TOOL, EXPLAIN_TOOL]
 
-语气亲切，用表情符号，每次只问一个。用户说"没有"或"不需要"则跳过。
+SYSTEM_PROMPT = """你是一个高考志愿填报助手（江西 3+1+2）。
 
-收集完成后调用 recommend 函数获取结果。收到返回后按 Markdown 输出：
+## 可用工具
+1. recommend — 冲/稳/保推荐（含概率）
+2. search_major — 按专业名查录取数据
+3. compare_schools — 多校对比
+4. explain_admission — 解释录取概率
 
-### 📊 考生概况
-- 分数/位次/科类/选科/专业偏好/省份筛选
+## 对话流程
+逐一询问（每次只问一个）：分数 → 位次 → 物理/历史 → 再选科目 → 专业偏好（可用簇名如计算机/医学）→ 省份/档次（可选）→ 激进/保底（可选）。
+信息足够即可调用工具，不要编造数据。
 
-### ⚡ 冲刺院校
-| 学校 | 专业 | 分数/位次 | 总分 | 计划(今/去) |
-按总分降序排列，解释为什么是冲刺。
-
-### ✅ 稳健院校
-| 学校 | 专业 | 分数/位次 | 总分 | 计划(今/去) |
-按总分降序排列。
-
-### 🛡️ 保底院校
-| 学校 | 专业 | 分数/位次 | 总分 | 计划(今/去) |
-按总分降序排列。
-
-### 💡 建议
-基于位次比和各评分项给出 2-3 条具体建议。注意新专业标记 ⚠️ 的分数为均值估算。
-
-注意：只展示 recommend 返回的真实数据，不要编造。"""
+## 输出格式
+工具返回后用 Markdown，包含：
+- 考生概况
+- 推荐表（学校/专业/分位次/概率区间/总分）
+- 2-3 条具体建议
+概率为启发式估算，请注明「仅供参考，非官方概率」。"""
 
 
-def call_deepseek(messages):
+def call_deepseek(
+    messages: List[Dict[str, Any]], stream: bool = False
+) -> Any:
     if not DEEPSEEK_API_KEY:
         return {"error": "DEEPSEEK_API_KEY 未设置"}
+    payload = {
+        "model": "deepseek-chat",
+        "messages": messages,
+        "tools": ALL_TOOLS,
+        "tool_choice": "auto",
+        "temperature": 0.7,
+        "max_tokens": 4096,
+        "stream": stream,
+    }
+    headers = {
+        "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
+        "Content-Type": "application/json",
+    }
     try:
-        resp = requests.post(DEEPSEEK_API_URL, headers={
-            "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
-            "Content-Type": "application/json"
-        }, json={
-            "model": "deepseek-chat",
-            "messages": messages,
-            "tools": [RECOMMEND_TOOL],
-            "tool_choice": "auto",
-            "temperature": 0.7,
-            "max_tokens": 4096
-        }, timeout=60)
+        if stream:
+            resp = requests.post(
+                DEEPSEEK_API_URL,
+                headers=headers,
+                json=payload,
+                timeout=120,
+                stream=True,
+            )
+            return resp
+        resp = requests.post(
+            DEEPSEEK_API_URL, headers=headers, json=payload, timeout=90
+        )
         result = resp.json()
         if "error" in result:
-            return {"error": result["error"]["message"]}
+            err = result["error"]
+            if isinstance(err, dict):
+                return {"error": err.get("message", str(err))}
+            return {"error": str(err)}
         return result
     except Exception as e:
         return {"error": str(e)}
 
 
-def call_recommend_api(args):
-    try:
-        r = requests.post("http://127.0.0.1:5080/api/recommend", json=args, timeout=30)
-        return r.json()
-    except Exception as e:
-        return {"error": f"推荐服务调用失败: {e}"}
+def _slim(name: str, rec: Dict[str, Any]) -> Dict[str, Any]:
+    if "error" in rec:
+        return rec
+    if name == "recommend":
+        out = {
+            k: rec[k]
+            for k in (
+                "year",
+                "planYear",
+                "curriculum",
+                "aggressiveness",
+                "safety",
+                "rankFilterWidth",
+                "probModel",
+                "keywordsUser",
+            )
+            if k in rec
+        }
+        for tier in ("reach", "match", "safe"):
+            items = rec.get(tier) or []
+            slim_items = []
+            for it in items[:12]:
+                slim_items.append(
+                    {
+                        "school": it.get("school"),
+                        "majorName": it.get("majorName"),
+                        "majorScore": it.get("majorScore"),
+                        "majorRank": it.get("majorRank"),
+                        "ratio": it.get("ratio"),
+                        "admit": it.get("admit"),
+                        "scores": it.get("scores"),
+                        "planThisYear": it.get("planThisYear"),
+                        "planLastYear": it.get("planLastYear"),
+                    }
+                )
+            out[tier] = slim_items
+            out[f"{tier}Total"] = len(items)
+        return out
+    if name == "search_major":
+        rows = rec.get("rows") or []
+        return {**rec, "rows": rows[:20]}
+    if name == "compare_schools":
+        return rec
+    return rec
 
 
-def process_chat(history, user_message):
+def process_chat(
+    history: List[Dict[str, Any]], user_message: str
+) -> Tuple[str, List[Dict[str, Any]]]:
     if not history:
         history = [{"role": "system", "content": SYSTEM_PROMPT}]
+    history = list(history)
     history.append({"role": "user", "content": user_message})
 
-    for _ in range(5):
-        result = call_deepseek(history)
-        if "error" in result:
+    for _ in range(6):
+        result = call_deepseek(history, stream=False)
+        if isinstance(result, dict) and "error" in result:
             return result["error"], history
         choice = result["choices"][0]
         msg = choice["message"]
@@ -125,13 +254,145 @@ def process_chat(history, user_message):
         if msg.get("tool_calls"):
             history.append(msg)
             for tc in msg["tool_calls"]:
-                if tc["function"]["name"] == "recommend":
-                    args = json.loads(tc["function"]["arguments"])
-                    rec = call_recommend_api(args)
-                    history.append({"role": "tool", "tool_call_id": tc["id"],
-                                    "content": json.dumps(rec, ensure_ascii=False)})
+                fname = tc["function"]["name"]
+                try:
+                    args = json.loads(tc["function"]["arguments"] or "{}")
+                except json.JSONDecodeError:
+                    args = {}
+                raw = dispatch_tool(fname, args)
+                history.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": tc["id"],
+                        "content": json.dumps(
+                            _slim(fname, raw), ensure_ascii=False
+                        ),
+                    }
+                )
         else:
             history.append(msg)
-            return msg["content"], history
+            return msg.get("content") or "", history
 
     return "处理超时，请重试", history
+
+
+def process_chat_stream(
+    history: List[Dict[str, Any]], user_message: str
+) -> Generator[Dict[str, Any], None, None]:
+    """SSE 事件生成器。
+
+    事件类型:
+      status / tool / delta / done / error
+    """
+    if not history:
+        history = [{"role": "system", "content": SYSTEM_PROMPT}]
+    history = list(history)
+    history.append({"role": "user", "content": user_message})
+    yield {"type": "status", "message": "思考中…"}
+
+    for _ in range(6):
+        # 工具轮次用非流式，最终回答用流式
+        result = call_deepseek(history, stream=False)
+        if isinstance(result, dict) and "error" in result:
+            yield {"type": "error", "message": result["error"]}
+            return
+        choice = result["choices"][0]
+        msg = choice["message"]
+
+        if msg.get("tool_calls"):
+            history.append(msg)
+            for tc in msg["tool_calls"]:
+                fname = tc["function"]["name"]
+                yield {"type": "tool", "name": fname, "message": f"调用 {fname}…"}
+                try:
+                    args = json.loads(tc["function"]["arguments"] or "{}")
+                except json.JSONDecodeError:
+                    args = {}
+                raw = dispatch_tool(fname, args)
+                history.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": tc["id"],
+                        "content": json.dumps(
+                            _slim(fname, raw), ensure_ascii=False
+                        ),
+                    }
+                )
+            continue
+
+        # 最终文本：再请求一次流式（带 tools 关闭更稳：用无 tools 的续写）
+        yield {"type": "status", "message": "生成回答…"}
+        # 直接使用已拿到的 content（非流式已完整）；若要真流式再调一次
+        content = msg.get("content") or ""
+        if content:
+            # 模拟分片，前端体验接近流式；若有 key 则尝试真流式
+            if DEEPSEEK_API_KEY:
+                stream_resp = _stream_final(history)
+                if stream_resp is not None:
+                    full = []
+                    try:
+                        for piece in stream_resp:
+                            full.append(piece)
+                            yield {"type": "delta", "text": piece}
+                        text = "".join(full)
+                        history.append({"role": "assistant", "content": text})
+                        yield {"type": "done", "reply": text, "history": history}
+                        return
+                    except Exception as e:
+                        yield {"type": "error", "message": str(e)}
+                        return
+            # fallback 整段
+            history.append(msg)
+            yield {"type": "delta", "text": content}
+            yield {"type": "done", "reply": content, "history": history}
+            return
+
+        history.append(msg)
+        yield {"type": "done", "reply": content, "history": history}
+        return
+
+    yield {"type": "error", "message": "处理超时，请重试"}
+
+
+def _stream_final(history: List[Dict[str, Any]]) -> Optional[Generator[str, None, None]]:
+    """对最终回复做流式输出（不再带 tools，避免中途 tool_call）。"""
+    if not DEEPSEEK_API_KEY:
+        return None
+
+    def gen():
+        payload = {
+            "model": "deepseek-chat",
+            "messages": history,
+            "temperature": 0.7,
+            "max_tokens": 4096,
+            "stream": True,
+        }
+        headers = {
+            "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
+            "Content-Type": "application/json",
+        }
+        with requests.post(
+            DEEPSEEK_API_URL,
+            headers=headers,
+            json=payload,
+            timeout=120,
+            stream=True,
+        ) as resp:
+            resp.raise_for_status()
+            for line in resp.iter_lines(decode_unicode=True):
+                if not line:
+                    continue
+                if line.startswith("data: "):
+                    data = line[6:].strip()
+                    if data == "[DONE]":
+                        break
+                    try:
+                        obj = json.loads(data)
+                        delta = obj["choices"][0].get("delta") or {}
+                        piece = delta.get("content") or ""
+                        if piece:
+                            yield piece
+                    except Exception:
+                        continue
+
+    return gen()

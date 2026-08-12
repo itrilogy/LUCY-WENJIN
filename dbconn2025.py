@@ -1,38 +1,24 @@
 # -*- coding: utf-8 -*-
+"""SQLite 连接封装（兼容爬虫旧接口，内部走 core.db）。"""
 
-import sqlite3
+from __future__ import annotations
 
+from typing import Any, Sequence
 
-class DBConn :
-	"""SQLite 连接封装（单例模式，复用同一连接）"""
-	_conn = None
-	_initialized = False
-
-	def __init__(self):
-		if DBConn._conn is None:
-			DBConn._conn = sqlite3.connect("/Users/ic/Project/gaokao2025/gaokao2025.sqlite", timeout=30, check_same_thread=False, isolation_level=None)
-			DBConn._conn.execute("PRAGMA journal_mode=WAL")
-			DBConn._conn.execute("PRAGMA synchronous=NORMAL")
-			DBConn._initialized = True
-		self.conn = DBConn._conn
-
-	def execSql(self,sqlstr):
-		curs=self.conn.cursor()
-
-		curs.execute(sqlstr)
-
-		self.conn.commit()
-
-		curs.close()
-
-	def execQuery(self,sqlstr):
-		curs=self.conn.cursor()
-		curs.execute(sqlstr)
-
-		rows=curs.fetchall()
-
-		curs.close()
-
-		return rows
+from core.db import execute, get_conn, query_tuples
 
 
+class DBConn:
+    """单例外观：与历史代码 API 兼容。"""
+
+    _initialized = False
+
+    def __init__(self):
+        self.conn = get_conn()
+        DBConn._initialized = True
+
+    def execSql(self, sqlstr: str, params: Sequence[Any] = ()):
+        execute(sqlstr, params)
+
+    def execQuery(self, sqlstr: str, params: Sequence[Any] = ()):
+        return query_tuples(sqlstr, params)

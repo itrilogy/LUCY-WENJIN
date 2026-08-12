@@ -1,14 +1,27 @@
-/* 高考志愿填报助手 - 江西版2025 */
-:root{--primary:#2563eb;--primary-dark:#1d4ed8;--bg:#f0f4f8;--card:#fff;--text:#1e293b;--muted:#64748b;--border:#e2e8f0;--shadow:0 1px 3px rgba(0,0,0,.06);--shadow-lg:0 4px 12px rgba(0,0,0,.08);--radius:8px;--radius-lg:12px}
+/* 鹿溪志愿 · 江西版（鹿溪 CI） */
+:root{
+  --luxi-green:#0D5E42;--luxi-green-light:#127A55;--luxi-cyan:#00D2FF;--luxi-gold:#F1C40F;--luxi-white:#F5F7FA;
+  --primary:#0D5E42;--primary-dark:#094832;--accent:#2563eb;
+  --bg:#f0f4f8;--card:#fff;--text:#1e293b;--muted:#64748b;--border:#e2e8f0;
+  --shadow:0 1px 3px rgba(0,0,0,.06);--shadow-lg:0 4px 12px rgba(0,0,0,.08);--radius:8px;--radius-lg:12px
+}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font:15px -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;line-height:1.6}
+body{font:15px -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;line-height:1.6}
 /* 侧边栏 */
-.sidebar{width:220px;background:linear-gradient(180deg,#1e293b,#0f172a);color:#fff;flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto;z-index:10}
-.sidebar h1{font-size:16px;padding:24px 16px 14px;border-bottom:1px solid #334155;font-weight:700;letter-spacing:.5px}
+.sidebar{width:228px;background:linear-gradient(180deg,#0f1f1a,#0a1612 40%,#0f172a);color:#fff;flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto;z-index:10}
+.brand-block{display:flex;align-items:center;gap:10px;padding:18px 14px 14px;border-bottom:1px solid rgba(13,94,66,.45)}
+.brand-mark{width:36px;height:36px;border-radius:10px;flex-shrink:0;box-shadow:0 2px 8px rgba(0,210,255,.15)}
+.brand-title{font-size:15px;font-weight:700;letter-spacing:.4px;color:#F5F7FA}
+.brand-ver{font-size:10px;font-weight:400;color:#64748b;margin-left:2px}
+.brand-sub{font-size:10px;color:#7dd3b0;margin-top:2px;letter-spacing:.8px}
 .sidebar .nav{padding:12px 0}
 .sidebar .nav-item{padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;font-size:14px;color:#94a3b8;transition:.2s;border-left:3px solid transparent}
-.sidebar .nav-item:hover{background:#1e293b;color:#e2e8f0;border-left-color:#475569}
-.sidebar .nav-item.active{background:#1e3a5f;color:#fff;border-left-color:var(--primary);font-weight:600}
+.sidebar .nav-item:hover{background:rgba(13,94,66,.2);color:#e2e8f0;border-left-color:#475569}
+.sidebar .nav-item.active{background:rgba(13,94,66,.35);color:#fff;border-left-color:var(--luxi-cyan);font-weight:600}
+.lab-foot{padding:10px 14px 16px;opacity:.92}
+.lab-logo{width:100%;max-width:180px;height:auto;display:block;margin:0 auto;border-radius:8px;background:rgba(255,255,255,.92);padding:4px}
+.about-product-logo{width:min(280px,90%);height:auto;margin:0 auto 8px;display:block}
+.about-lab-logo{width:min(160px,70%);height:auto;margin:8px auto;display:block;border-radius:8px;background:#fff;padding:6px;box-shadow:var(--shadow)}
 /* 主内容 */
 .main{flex:1;padding:28px 32px;max-width:1400px;margin:0 auto;width:100%}
 .page{display:none}.page.active{display:block;animation:fadeIn .25s ease}
@@ -19,8 +32,8 @@ h2{font-size:22px;margin-bottom:20px;font-weight:700;color:var(--text);display:f
 .filters input,.filters select{padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:14px;background:var(--card);transition:border-color .2s}
 .filters input:focus,.filters select:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
 .filters label{font-size:13px;display:flex;align-items:center;gap:4px;cursor:pointer;color:var(--text);user-select:none}
-.btn{padding:8px 24px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;border:none;border-radius:var(--radius);cursor:pointer;font-size:14px;transition:.2s;font-weight:500;box-shadow:0 2px 6px rgba(37,99,235,.25)}
-.btn:hover{background:linear-gradient(135deg,var(--primary-dark),#1e3a8a);box-shadow:0 4px 10px rgba(37,99,235,.35);transform:translateY(-1px)}
+.btn{padding:8px 24px;background:linear-gradient(135deg,var(--luxi-green-light),var(--luxi-green));color:#fff;border:none;border-radius:var(--radius);cursor:pointer;font-size:14px;transition:.2s;font-weight:500;box-shadow:0 2px 6px rgba(13,94,66,.28)}
+.btn:hover{background:linear-gradient(135deg,var(--luxi-green),var(--primary-dark));box-shadow:0 4px 10px rgba(13,94,66,.38);transform:translateY(-1px)}
 .btn:active{transform:translateY(0)}
 .btn-sm{padding:5px 14px;font-size:13px}
 /* 表格 */
@@ -65,7 +78,7 @@ tbody tr:hover{background:#f0f7ff}
 .multi-input{display:flex;flex-wrap:wrap;gap:3px;padding:5px 10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--card);cursor:pointer;min-height:34px;align-items:center;transition:border-color .2s}
 .multi-input:hover{border-color:var(--primary)}
 .multi-input .ph{color:var(--muted);font-size:13px}
-.multi-input .sel-tag{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;background:linear-gradient(135deg,var(--primary),#3b82f6);color:#fff;border-radius:4px;font-size:12px;font-weight:500}
+.multi-input .sel-tag{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;background:linear-gradient(135deg,var(--luxi-green-light),var(--luxi-green));color:#fff;border-radius:4px;font-size:12px;font-weight:500}
 .multi-input .sel-tag .del{cursor:pointer;font-weight:700;margin-left:3px;font-size:14px;line-height:1;opacity:.8;transition:opacity .2s}
 .multi-input .sel-tag .del:hover{opacity:1}
 .multi-drop{display:none;position:absolute;top:100%;left:0;z-index:20;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-lg);max-height:200px;overflow-y:auto;min-width:220px;padding:4px;margin-top:4px}

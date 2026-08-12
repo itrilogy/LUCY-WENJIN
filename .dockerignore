@@ -1,0 +1,14 @@
+venv/
+__pycache__/
+*.pyc
+.git/
+.pytest_cache/
+paper/
+*.tar.gz
+*.bak
+*.bak2
+.DS_Store
+.reasonix/
+gaokao2025.sqlite
+gaokao2025.sqlite-*
+scripts/data_quality_report.json

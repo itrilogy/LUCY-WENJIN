@@ -5,5 +5,12 @@ __pycache__/
 *.sqlite-wal
 gaokao2025.sqlite
 *.bak
+*.bak2
 .~lock*
 .reasonix/
+.pytest_cache/
+scripts/data_quality_report.json
+.DS_Store
+*.tar.gz
+paper/
+app.py.bak*

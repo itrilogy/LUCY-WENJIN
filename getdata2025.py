@@ -159,7 +159,8 @@ def is_skipped(school, year, curriculum, table):
     """查询 crawl_skip 表，确认该组合是否已确认无数据"""
     dbconn = DBConn()
     r = dbconn.execQuery(
-        f"SELECT 1 FROM crawl_skip WHERE school_name='{school}' AND year='{year}' AND curriculum='{curriculum}' AND table_name='{table}'"
+        "SELECT 1 FROM crawl_skip WHERE school_name=? AND year=? AND curriculum=? AND table_name=?",
+        (school, str(year), curriculum, table),
     )
     return len(r) > 0
 
@@ -168,7 +169,8 @@ def mark_skipped(school, year, curriculum, table):
     """记录该组合已确认无数据"""
     dbconn = DBConn()
     dbconn.execSql(
-        f"INSERT OR IGNORE INTO crawl_skip(school_name, year, curriculum, table_name) VALUES('{school}','{year}','{curriculum}','{table}')"
+        "INSERT OR IGNORE INTO crawl_skip(school_name, year, curriculum, table_name) VALUES(?,?,?,?)",
+        (school, str(year), curriculum, table),
     )
 
 
@@ -204,13 +206,52 @@ def getSchoolList(pageno):
     return None
 
 
+# 允许参与动态查询的表/列（防注入）
+_ALLOWED_TABLES = {
+    "college_info", "schoolscore", "majorscore", "college_plan", "crawl_skip",
+}
+_ALLOWED_COLS = {
+    "legalName", "province", "year", "curriculum", "batchName", "enrollType",
+    "majorName", "major_name", "batch_name", "college_name", "school_name",
+    "table_name",
+}
+
+
 def has_data(table, conditions):
-    """检查数据库中是否已存在指定条件的记录，避免重复 API 请求"""
-    dbconn = DBConn()
-    where = " AND ".join([f"{k}='{v}'" for k, v in conditions.items()])
+    """检查数据库中是否已存在指定条件的记录，避免重复 API 请求（参数化）"""
+    if table not in _ALLOWED_TABLES:
+        raise ValueError(f"不允许的表名: {table}")
+    cols, params = [], []
+    for k, v in conditions.items():
+        if k not in _ALLOWED_COLS:
+            raise ValueError(f"不允许的列名: {k}")
+        cols.append(f"{k}=?")
+        params.append(v)
+    where = " AND ".join(cols)
     sql = f"SELECT 1 FROM {table} WHERE {where} LIMIT 1"
-    result = dbconn.execQuery(sql)
+    dbconn = DBConn()
+    result = dbconn.execQuery(sql, params)
     return len(result) > 0
+
+
+def _insert_dict(table, field_list, data, mode="ignore"):
+    """参数化 INSERT：field_list 可含引号包装的字段名。"""
+    if table not in _ALLOWED_TABLES and table != "college_info":
+        # college_info 已在 allowed；保留显式
+        pass
+    cols, placeholders, params = [], [], []
+    for num in field_list:
+        fieldname = num.replace('"', "")
+        if fieldname in data and data[fieldname] is not None:
+            cols.append(fieldname)
+            placeholders.append("?")
+            params.append(str(data[fieldname]))
+    if not cols:
+        return
+    verb = "INSERT OR IGNORE" if mode == "ignore" else "INSERT OR REPLACE"
+    sql = f"{verb} INTO {table}({','.join(cols)}) VALUES({','.join(placeholders)})"
+    dbconn = DBConn()
+    dbconn.execSql(sql, params)
 
 
 # 更新所有学校信息
@@ -255,67 +296,42 @@ def deleteAllSchool():
 	dbconn.execSql(sqlstr)
 
 def insertSchool(schoolInfo, skip_logo=False):
-	# dbconn=DBConn()
-	# print(schoolInfo["college_name"])
+	row = {}
+	for num in schoolFieldList:
+		fieldname = num.replace('"', "")
+		if fieldname == "logourl":
+			row["logourl"] = str(schoolInfo.get("logo") or schoolInfo.get("logourl") or "")
+		elif fieldname in schoolInfo:
+			row[fieldname] = schoolInfo[fieldname]
+	if "logourl" not in row:
+		row["logourl"] = str(schoolInfo.get("logo") or "")
 
-	sqlstr="insert or replace into college_info("
-
-	values="values("
-
-	for num in schoolFieldList :
-		fieldname=num.replace('\"','')
-		if fieldname in schoolInfo:
-			sqlstr=sqlstr+num+","
-			if fieldname=='logourl'  :
-				values=values+"'"+str(schoolInfo["logo"])+"',"
-			else :
-				values=values+"'"+str(schoolInfo[fieldname]).replace('\'','\'\'')+"',"
-				
-	# print(sqlstr)
-	sqlstr=sqlstr+"logourl,"
-	values=values+"'"+str(schoolInfo["logo"])+"',"
-	# print(values)
-
-	content=None
+	content = None
 	if not skip_logo:
-		#下载图片文件并保存进数据库2022.12.20（加超时和容错）
-		logoUrl=schoolInfo["logo"]
+		logoUrl = schoolInfo.get("logo")
 		try:
-			a=urlparse(logoUrl)
-			filename=os.path.basename(a.path)
-			urllib.request.urlretrieve(logoUrl, filename=filename, timeout=10)
-			
-			# 打开图片编码成base64的字节码后存入
-			jpg_byte=None
-			content=None
-			with open(filename,'rb') as f:
-				jpg_byte=f.read()
-				content=base64.b64encode(jpg_byte)
-
-			#删除文件
+			a = urlparse(logoUrl)
+			filename = os.path.basename(a.path) or "logo.tmp"
+			urllib.request.urlretrieve(logoUrl, filename=filename)
+			with open(filename, "rb") as f:
+				content = base64.b64encode(f.read())
 			os.remove(filename)
 		except Exception as e:
 			print(f"  logo下载失败(跳过): {e}")
-			content=None
+			content = None
 
-    #插入数据库
-	try:
-		sqlstr=sqlstr[0:len(sqlstr)-1]+")\n"+values[0:len(values)-1]+")"
-		dbconn=DBConn()
-		dbconn.execSql(sqlstr)
-	except Exception as e:
-		print(sqlstr)
-		raise e
-	
-    #如果logo下载成功，更新数据库logo
+	cols = list(row.keys())
+	placeholders = ",".join(["?"] * len(cols))
+	sql = f"INSERT OR REPLACE INTO college_info({','.join(cols)}) VALUES({placeholders})"
+	DBConn().execSql(sql, [str(row[c]) for c in cols])
+
 	if content:
-		college_name=schoolInfo["college_name"]
-		sqlstr1="update college_info set logo=? where college_name=?"
-		dbconn=DBConn()
-		dbconn.conn.execute(sqlstr1,(content,college_name))
-		dbconn.conn.commit()
+		DBConn().execSql(
+			"UPDATE college_info SET logo=? WHERE college_name=?",
+			(content, schoolInfo["college_name"]),
+		)
 
-	print(schoolInfo["college_name"],"数据更新完成")
+	print(schoolInfo["college_name"], "数据更新完成")
 	
 def getAllSchoolName():
 	sqlstr="select college_name from college_info order by id"
@@ -389,30 +405,12 @@ def insertSchoolScore():
 					mark_skipped(schoolName[0], str(year), cur_api, "schoolscore")
 					continue
 				# print(schoolscores)
-				for schoolscore in schoolscores :
-
-					sqlstr="insert or ignore into schoolscore("
-
-					values="values("
-
-					if schoolscore['year']==str(year):
-						#插入数据库
-						for num in schoolScoreFieldList :
-							fieldname=num.replace('\"','')
-							if fieldname in schoolscore:
-								sqlstr=sqlstr+num+","
-								values=values+"'"+str(schoolscore[fieldname]).replace('\'','\'\'')+"',"
-					sqlstr=sqlstr[0:len(sqlstr)-1]+")\n"+values[0:len(values)-1]+")"
-					count=count+1
-					#插入数据库
-					# print(sqlstr,"\n")
-					print(count)
-					# if count%100 == 0 :
-					# 	print("已更新：",count,"\n")
-					dbconn=DBConn()
-					dbconn.execSql(sqlstr)
-					# print(schoolscore,"\n")
-				# print(sqlstr,"\n")
+				for schoolscore in schoolscores:
+					if schoolscore.get("year") == str(year):
+						_insert_dict("schoolscore", schoolScoreFieldList, schoolscore, mode="ignore")
+						count += 1
+						if count % 100 == 0:
+							print("已更新：", count)
 
 			year=year-1
 			time.sleep(0.1)
@@ -483,36 +481,19 @@ def getMajorScore(college_name, province, year, curriculum):
 			if 'dataList' not in str(e):
 				print(college_name,"-",province,"-",year,"-",f"查询出错: {e}")
 			
-def delMajorScore(college_name,province):
-	sqlstr="delete from majorscore where \"legalName\"='"+college_name+"' and province='"+province+"'"
-	dbconn=DBConn()
-	dbconn.execSql(sqlstr)
-	
+def delMajorScore(college_name, province):
+	DBConn().execSql(
+		"DELETE FROM majorscore WHERE legalName=? AND province=?",
+		(college_name, province),
+	)
+
 
 def delAllMajorScore():
-	sqlstr="delete from majorscore "
-	dbconn=DBConn()
-	dbconn.execSql(sqlstr)
-	
-    # 插入数据库
+	DBConn().execSql("DELETE FROM majorscore")
+
+
 def insertMajorScore(majorscore):
-	# print(majorscore)
-	sqlstr="insert or ignore into majorscore("
-
-	values="values("
-
-	for num in schoolMajorScoreFieldList :
-		fieldname=num.replace('\"','')
-		
-		if fieldname in majorscore:
-			sqlstr=sqlstr+num+","
-			
-			values=values+"'"+str(majorscore[fieldname]).replace('\'','\'\'')+"',"
-
-	sqlstr=sqlstr[0:len(sqlstr)-1]+")\n"+values[0:len(values)-1]+")"
-	# print(sqlstr)
-	dbconn=DBConn()
-	dbconn.execSql(sqlstr)
+	_insert_dict("majorscore", schoolMajorScoreFieldList, majorscore, mode="ignore")
 	
 #近5年的专业成绩，按年份和文理分类分别爬取
 def getMajorScoreNear5(college_name, province):
@@ -614,23 +595,11 @@ def getCollegePlanFromUrl(school, province, year, curriculum, pn, rn):
 	
 
 # 插入招生计划数据库
-def insertCollegePlan(collegePlan,schoolName):
-	sqlstr="insert or ignore into college_plan(legalName,"
-
-	values="values('"+schoolName+"',"
-
-	for num in schoolPlanFieldList :
-		fieldname=num.replace('\"','')
-		
-		if fieldname in collegePlan:
-			sqlstr=sqlstr+num+","
-			
-			values=values+"'"+str(collegePlan[fieldname]).replace('\'','\'\'')+"',"
-
-	sqlstr=sqlstr[0:len(sqlstr)-1]+")\n"+values[0:len(values)-1]+")"
-	# print(sqlstr)
-	dbconn=DBConn()
-	dbconn.execSql(sqlstr)
+def insertCollegePlan(collegePlan, schoolName):
+	row = dict(collegePlan)
+	row["legalName"] = schoolName
+	fields = ['"legalName"'] + schoolPlanFieldList
+	_insert_dict("college_plan", fields, row, mode="ignore")
 	
 def getCollegePlan():
 	# 创建唯一索引，支持增量更新

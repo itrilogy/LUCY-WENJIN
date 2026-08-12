@@ -1,0 +1,17 @@
+services:
+  gaokao:
+    build: .
+    ports:
+      - "5080:5080"
+    environment:
+      - FLASK_DEBUG=0
+      - GAOKAO_HOST=0.0.0.0
+      - GAOKAO_PORT=5080
+      # - GAOKAO_API_TOKEN=change-me
+      # - DEEPSEEK_API_KEY=
+      # - GAOKAO_PLAN_YEAR=2026
+      # - GAOKAO_SCORE_YEAR=2025
+    volumes:
+      # 挂载本地数据库（推荐，避免把 100MB+ sqlite 打进镜像）
+      - ./gaokao2025.sqlite:/app/gaokao2025.sqlite
+    restart: unless-stopped
