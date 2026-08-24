@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""高考志愿填报助手 - Web UI（江西版）"""
+"""问津 · WenJin 高考决策系统 - Web UI（江西版）"""
 
 from __future__ import annotations
 
@@ -723,5 +723,5 @@ def api_quality():
 
 
 if __name__ == "__main__":
-    print(f"鹿溪志愿 Web UI: http://127.0.0.1:{PORT}  (debug={DEBUG})")
+    print(f"问津 · WenJin 高考决策系统: http://127.0.0.1:{PORT}  (debug={DEBUG})")
     app.run(host=HOST, port=PORT, debug=DEBUG, threaded=True)

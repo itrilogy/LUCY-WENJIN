@@ -1,7 +1,7 @@
 function showAbout(){
   var el = document.getElementById('aboutOverlay');
   if(el) el.style.display = 'flex';
-  else showToast('鹿溪志愿 v1.2 — 鹿溪联合创新实验室', 'info');
+  else showToast('问津 · WenJin v1.2 — 鹿溪联合创新实验室', 'info');
 }
 function hideAbout(){document.getElementById('aboutOverlay').style.display='none'}
 

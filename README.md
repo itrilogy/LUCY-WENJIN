@@ -1,13 +1,13 @@
-# 鹿溪志愿 · LUXI Volunteer
+# 问津 · WenJin（鹿溪志愿）
 
-> **林深见鹿 · 源启清溪**  
-> 面向江西省高考考生的智能化志愿填报助手  
+> **向道问津，顺溪成程**  
+> 面向江西省高考考生的智能化志愿填报与梯度推演助手  
 > 出品：**鹿溪联合创新实验室**（LUXI Joint Innovation Lab）
 
 <p align="left">
-  <img src="static/brand/favicon.svg" width="48" height="48" alt="鹿溪志愿">
+  <img src="static/brand/favicon.svg" width="48" height="48" alt="问津 · WenJin">
   &nbsp;
-  <img src="static/brand/logo.svg" width="280" alt="鹿溪志愿字锁">
+  <img src="static/brand/logo.svg" width="280" alt="问津 · WenJin 字锁">
 </p>
 
 仓库：[`itrilogy/luxi-volunteer`](https://github.com/itrilogy/luxi-volunteer)
@@ -95,7 +95,7 @@ python3 getdata2025.py plan     # 招生计划
 
 ## 与原项目的区别
 
-| 方面 | 原项目 (`qt/topschool/`) | 鹿溪志愿 |
+| 方面 | 原项目 (`qt/topschool/`) | 问津 · WenJin |
 |------|-------------------------|---------|
 | 省份 | 浙江（3+3） | **江西（3+1+2）** |
 | 界面 | Qt 桌面 | **Flask Web SPA** |

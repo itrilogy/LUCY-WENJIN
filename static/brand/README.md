@@ -1,7 +1,7 @@
-# 鹿溪志愿 · 品牌资产
+# 问津 · WenJin · 品牌资产
 
-> 对齐实验室范式：见鹿 / 听默 / 双色球市场分析  
-> 归档对照：`Obsidian/departments/lab/双色球-市场分析-品牌资产`
+> 对齐实验室范式：见鹿 / 听默 / 观澜 · GuanLan  
+> 归档对照：`Obsidian/departments/lab/鹿溪志愿-品牌资产`
 
 ## 双层结构
 
