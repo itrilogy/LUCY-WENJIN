@@ -1,20 +1,36 @@
-# 问津 · WenJin（鹿溪志愿）
+<div align="center">
+  <img src="static/brand/favicon.svg" width="64" height="64" alt="问津 · WenJin 产品标" />
+  &nbsp;&nbsp;
+  <img src="static/brand/luxi-lab-main.svg" width="64" height="64" alt="鹿溪联合创新实验室 LUXI LAB" />
+</div>
 
-> **向道问津，顺溪成程**  
-> 面向江西省高考考生的智能化志愿填报与梯度推演助手  
-> 出品：**鹿溪联合创新实验室**（LUXI Joint Innovation Lab）
+<h1 align="center">问津 · WenJin（鹿溪志愿）</h1>
 
-<p align="left">
-  <img src="static/brand/favicon.svg" width="48" height="48" alt="问津 · WenJin">
+<p align="center">
+  <strong>向道问津，顺溪成程</strong><br/>
+  <em>Finding the right passage where choices meet the future.</em>
 </p>
 
-仓库：[`itrilogy/LUCY-WENJIN`](https://github.com/itrilogy/LUCY-WENJIN)
+<p align="center">
+  <img src="https://img.shields.io/badge/Matrix-理数%C2%B7三思-0D5E42" alt="matrix" />
+  <img src="https://img.shields.io/badge/Product-问津%20WenJin-0D5E42" alt="product" />
+  <img src="https://img.shields.io/badge/Lab-鹿溪联合创新实验室-047538" alt="lab" />
+  <img src="https://img.shields.io/badge/Based%20on-gaokao2025-6366f1" alt="upstream" />
+  <img src="https://img.shields.io/badge/Stack-Flask%20%7C%20SQLite%20%7C%20DeepSeek-blue" alt="stack" />
+</p>
 
-基于开源项目 `gaokao2025`（`qt/topschool/`）改造。原项目提供百度高考 API 与 SQLite 表结构基础；本项目扩展为江西 **3+1+2** Web 应用：查询 + 冲稳保推荐 + AI 分析 + 百度一分一段 + 概率校准。
+<p align="center">
+  <b>鹿溪联合创新实验室</b>（LUXI Joint Innovation Lab）出品<br/>
+  仓库：<a href="https://github.com/itrilogy/LUCY-WENJIN">itrilogy/LUCY-WENJIN</a>
+</p>
 
 ---
 
-## 功能一览
+> 面向江西省高考考生的智能化志愿填报与梯度推演助手。基于开源项目 `gaokao2025`（`qt/topschool/`）改造：原项目提供百度高考 API 与 SQLite 表结构基础；本项目扩展为江西 **3+1+2** Web 应用——查询 + 冲稳保推荐 + AI 分析 + 百度一分一段 + 概率校准。
+
+---
+
+## ✨ 功能一览
 
 | 页面 | 功能 |
 |------|------|
@@ -29,7 +45,7 @@
 
 ---
 
-## 快速开始
+## 🚀 快速开始
 
 ```bash
 # 克隆
@@ -91,7 +107,7 @@ python3 getdata2025.py plan     # 招生计划
 
 ---
 
-## 与原项目的区别
+## 🔄 与原项目的区别
 
 | 方面 | 原项目 (`qt/topschool/`) | 问津 · WenJin |
 |------|-------------------------|---------|
@@ -104,7 +120,7 @@ python3 getdata2025.py plan     # 招生计划
 
 ---
 
-## 技术栈
+## 🛠 技术栈
 
 | 层 | 技术 |
 |----|------|
@@ -117,7 +133,7 @@ python3 getdata2025.py plan     # 招生计划
 
 ---
 
-## 项目结构
+## 🏗 项目结构
 
 ```
 LUCY-WENJIN/
@@ -142,19 +158,28 @@ LUCY-WENJIN/
 
 ---
 
-## 品牌资产
+## 🎨 品牌标识
 
-| 用途 | 路径 |
-|------|------|
-| Favicon / 侧栏小标 | [`static/brand/favicon.svg`](static/brand/favicon.svg) |
-| 产品横版字锁 | [`static/brand/logo.svg`](static/brand/logo.svg) |
-| 实验室主 LOGO | [`static/brand/luxi-lab-main.svg`](static/brand/luxi-lab-main.svg)（官方 LUXI LAB） |
+| 标识 | 预览 | 说明 | 源文件 |
+| :---: | :---: | :--- | :--- |
+| **产品方标** | <img src="static/brand/favicon.svg" width="32" height="32" alt="问津" /> | 双枝航道 + 金色落点 + 溪流（鹿溪绿底） | `static/brand/favicon.svg` |
+| **产品字锁** | [`static/brand/logo.svg`](static/brand/logo.svg) | 横版产品字锁 | `static/brand/logo.svg` |
+| **实验室主标** | <img src="static/brand/luxi-lab-main.svg" width="32" height="32" alt="LUXI LAB" /> | 官方 LUXI LAB | `static/brand/luxi-lab-main.svg` |
 
-色板：鹿溪绿 `#0D5E42` · 进化蓝 `#00D2FF` · 源启白 `#F5F7FA`。详见 [`static/brand/README.md`](static/brand/README.md)。
+**色板（LUXI CI）**
+
+| Token | 色值 | 用途 |
+| :--- | :--- | :--- |
+| 鹿溪绿 | `#0D5E42` | 主色 / 图标底板 |
+| 源启白 | `#F5F7FA` | 浅色背景 / 反白 |
+| 进化蓝 | `#00D2FF` | 溪流 / 数据高亮 |
+| 标题金 | `#F1C40F` | 落点 / 显著信号 |
+
+详见 [`static/brand/README.md`](static/brand/README.md)。
 
 ---
 
-## 文档
+## 📚 文档
 
 | 文档 | 内容 |
 |------|------|
@@ -166,7 +191,7 @@ LUCY-WENJIN/
 
 ---
 
-## 致谢
+## 🙏 致谢
 
 - 原项目 `qt/topschool` 数据与 API 思路  
 - 百度高考 / opendata 一分一段  
@@ -175,6 +200,15 @@ LUCY-WENJIN/
 
 ---
 
-## 免责声明
+## ⚖️ 免责声明
 
 本工具仅供志愿填报参考，录取结果以教育考试院与高校官方公布为准。概率模型为启发式估算，**不构成录取承诺**。
+
+---
+
+<div align="center">
+  <img src="static/brand/luxi-lab-main.svg" width="48" height="48" alt="LUXI LAB" />
+  <p><strong>问津 · WenJin</strong> · 向道问津，顺溪成程</p>
+  <p>© 鹿溪联合创新实验室 · LUXI Joint Innovation Lab</p>
+  <p><em>林深见鹿，源启清溪 · Deep Insights, Evolutionary Origin.</em></p>
+</div>
