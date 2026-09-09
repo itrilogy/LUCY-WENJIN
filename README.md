@@ -6,11 +6,9 @@
 
 <p align="left">
   <img src="static/brand/favicon.svg" width="48" height="48" alt="问津 · WenJin">
-  &nbsp;
-  <img src="static/brand/logo.svg" width="280" alt="问津 · WenJin 字锁">
 </p>
 
-仓库：[`itrilogy/luxi-volunteer`](https://github.com/itrilogy/luxi-volunteer)
+仓库：[`itrilogy/LUCY-WENJIN`](https://github.com/itrilogy/LUCY-WENJIN)
 
 基于开源项目 `gaokao2025`（`qt/topschool/`）改造。原项目提供百度高考 API 与 SQLite 表结构基础；本项目扩展为江西 **3+1+2** Web 应用：查询 + 冲稳保推荐 + AI 分析 + 百度一分一段 + 概率校准。
 
@@ -35,8 +33,8 @@
 
 ```bash
 # 克隆
-git clone https://github.com/itrilogy/luxi-volunteer.git
-cd luxi-volunteer
+git clone https://github.com/itrilogy/LUCY-WENJIN.git
+cd LUCY-WENJIN
 
 # 依赖（需自备 gaokao2025.sqlite，默认不入库）
 python3 -m pip install -r requirements.txt
@@ -122,7 +120,7 @@ python3 getdata2025.py plan     # 招生计划
 ## 项目结构
 
 ```
-luxi-volunteer/
+LUCY-WENJIN/
 ├── app.py                 # Flask 路由
 ├── ai_recommend.py        # DeepSeek 多工具 + SSE
 ├── core/                  # 配置 · DB · 推荐 · 一分一段 · 校准
