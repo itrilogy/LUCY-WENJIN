@@ -62,8 +62,10 @@ python3 -m pip install -r requirements.txt
 cp .env.example .env
 # 编辑 .env 填入 DEEPSEEK_API_KEY=sk-xxxx
 
-# 4. 数据库说明
-# 支持自愈建表；若需全量历年录取线数据，请导入 gaokao2025.sqlite（默认不入代码库）
+# 4. 数据库分发与自动还原
+# 仓库内置已收录 3000 所高校、16.7 万录取分线数据的压缩包（gaokao2025.sqlite.gz，约 17MB）
+# 首次运行 python3 app.py 时，系统会自动解压还原出完整的 gaokao2025.sqlite（约 116MB）
+# 也可手动解压：gzip -dk gaokao2025.sqlite.gz
 
 # 5. 启动服务（默认端口 5080）
 python3 app.py
@@ -74,7 +76,7 @@ python3 app.py
 open http://127.0.0.1:5080
 ```
 
-> 数据库文件 `gaokao2025.sqlite` 体积较大，默认由 `.gitignore` 排除。部署时请将已爬取的库放到项目根目录，或通过 `GAOKAO_DB` 指定路径。
+> **数据库说明**：因 GitHub 单文件上限为 100MB，全量数据库以标准 gzip 压缩包 `gaokao2025.sqlite.gz`（约 17.3MB）随版本库分发；程序启动时内置自愈还原机制，若检测到未解压则自动解包释放为 `gaokao2025.sqlite`，无需手动干预。
 
 ### 环境变量
 

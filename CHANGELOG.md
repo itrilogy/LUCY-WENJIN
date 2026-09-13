@@ -15,6 +15,7 @@
 - **产品方标同构**：重构 `favicon.svg` 与 `logo.svg` 为 48×48 鹿溪绿砖（`.brick`）+ 24 视口双枝航道 glyph（stroke 1.7）+ 水平溪流 + 标题金星。
 
 ### 核心架构与健壮性加固
+- **数据库随仓托管与自愈解压**：将 3,000 所高校、16.7 万录取分线的全量数据库封装为标准 gzip 压缩包 `gaokao2025.sqlite.gz`（约 17.3MB，规避 GitHub 单文件 100MB 限制并正常版本追踪）；`core/db.py` 内置自愈解压逻辑，首次启动检测到未解包时自动无缝还原出 `gaokao2025.sqlite`。
 - **数据库自愈建表**：`core/db.py` 内置 `init_schema()`，初次连接或空库启动时自动完成 9 张核心表与索引的创建，彻底杜绝 `no such table` 异常。
 - **空库安全防护**：`/api/filters` 与 `/api/quality` 增加空表安全取值与年份默认回退；启动时打印高校数据录入统计与数据导入提示。
 - **环境变量注入**：`core/config.py` 支持自动读取根目录 `.env`，提供 `.env.example` 模板，`.gitignore` 忽略 `.env` 防密钥泄漏。

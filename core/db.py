@@ -107,13 +107,28 @@ def init_schema(conn: sqlite3.Connection) -> None:
 
 
 def get_conn(db_path: Optional[Union[str, Path]] = None) -> sqlite3.Connection:
-    """进程内单例连接；爬虫与 Web 共用。初次连接自动初始化 DDL。"""
+    """进程内单例连接；爬虫与 Web 共用。初次连接自动初始化 DDL 与数据恢复。"""
     global _conn
-    path = str(db_path or DB_PATH)
+    p = Path(db_path or DB_PATH)
     with _lock:
         if _conn is None:
+            # 若 SQLite 文件不存在或为空，但存在同名 .gz 压缩包，自动解压还原
+            gz_path = p.with_name(p.name + ".gz")
+            if (not p.exists() or p.stat().st_size == 0) and gz_path.exists():
+                import gzip
+                import shutil
+                tmp_extract = p.with_suffix(".tmp_restore")
+                try:
+                    with gzip.open(gz_path, "rb") as f_in, open(tmp_extract, "wb") as f_out:
+                        shutil.copyfileobj(f_in, f_out)
+                    tmp_extract.replace(p)
+                except Exception as exc:
+                    if tmp_extract.exists():
+                        tmp_extract.unlink()
+                    raise RuntimeError(f"自动解压数据库压缩包 {gz_path} 失败: {exc}") from exc
+
             _conn = sqlite3.connect(
-                path,
+                str(p),
                 timeout=30,
                 check_same_thread=False,
                 isolation_level=None,  # autocommit，兼容爬虫事务
