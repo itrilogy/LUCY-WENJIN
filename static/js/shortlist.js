@@ -50,7 +50,7 @@ function clearShortlist(){
 
 function printShortlist(){
   if(!shortlist.length){showToast('备选清单为空','warn');return}
-  let h='<html><head><meta charset="UTF-8"><title>备选清单</title><style>body{font:12px sans-serif;padding:20px;color:#333}table{width:100%;border-collapse:collapse;margin:8px 0}th,td{border:1px solid #ddd;padding:5px 8px;text-align:left;font-size:11px}th{background:#f1f5f9}</style></head><body><h2>📋 志愿备选清单</h2><p>导出时间: '+new Date().toLocaleString()+'</p><table><thead><tr><th>#</th><th>学校</th><th>专业</th><th>位次</th><th>总分</th><th>概率</th><th>档位</th></tr></thead><tbody>';
+  let h='<html><head><meta charset="UTF-8"><title>志愿备选清单 · 问津</title><style>body{font:12px -apple-system,sans-serif;padding:24px;color:#1A2428}table{width:100%;border-collapse:collapse;margin:12px 0}th,td{border:1px solid #E2E8F0;padding:6px 10px;text-align:left;font-size:12px}th{background:#F5F7FA;color:#64748B}h2{color:#0D5E42;margin-bottom:4px}.foot{font-size:11px;color:#94A3B8;margin-top:16px}</style></head><body><h2>问津 · 志愿备选清单</h2><p style="color:#64748B;font-size:12px">导出时间: '+new Date().toLocaleString()+'</p><table><thead><tr><th>#</th><th>学校</th><th>专业</th><th>位次</th><th>总分</th><th>推演概率</th><th>梯度档位</th></tr></thead><tbody>';
   shortlist.forEach((x,i)=>{h+='<tr><td>'+(i+1)+'</td><td>'+x.school+'</td><td>'+x.major+'</td><td>'+x.rank+'</td><td>'+x.score+'</td><td>'+(x.prob||'')+'</td><td>'+x.tier+'</td></tr>';});
   h+='</tbody></table></body></html>';
   const w=window.open('','_blank');w.document.write(h);w.document.close();setTimeout(()=>{w.focus();w.print()},300);

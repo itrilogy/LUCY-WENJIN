@@ -75,12 +75,12 @@ async function sd(name){
   h+=`<div class="flt-row" style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:end">
     <div><span class="filter-label">位次</span><div class="range-group"><input id="r1_min" placeholder="下限" value="${saved.r1_min||''}" onkeydown="if(event.key==='Enter')sd(_sdName)"><span class="sep">—</span><input id="r1_max" placeholder="上限" value="${saved.r1_max||''}" onkeydown="if(event.key==='Enter')sd(_sdName)"></div></div>
     <div><span class="filter-label">分数</span><div class="range-group"><input id="s1_min" placeholder="下限" value="${saved.s1_min||''}" onkeydown="if(event.key==='Enter')sd(_sdName)"><span class="sep">—</span><input id="s1_max" placeholder="上限" value="${saved.s1_max||''}" onkeydown="if(event.key==='Enter')sd(_sdName)"></div></div>
-    <button class="btn btn-sm" onclick="sd(_sdName)" style="margin-bottom:1px">🔍 查询</button>
+    <button class="btn btn-secondary btn-sm" onclick="sd(_sdName)" style="margin-bottom:1px">查询</button>
   </div></div>`;
-  h+=`<div class="cols"><div class="col card"><h3>📊 录取分数线</h3><table><thead><tr><th>年份</th><th>批次</th><th>最低分/位次</th><th>科目</th></tr></thead><tbody>`;
-  d.scores.forEach(s=>h+=`<tr><td>${s.year}</td><td>${s.batchName||''}</td><td>${s.minScore||''}/${s.minScoreOrder||''}</td><td>${s.curriculum||''}</td></tr>`);
-  h+=`</tbody></table></div><div class="col card"><h3>📚 专业分数线</h3><table><thead><tr><th>年份</th><th>专业</th><th>选科</th><th>最低分/位次</th></tr></thead><tbody>`;
-  d.majors.forEach(m=>h+=`<tr><td>${m.year}</td><td>${m.majorName}</td><td>${m.specialCourse||''}</td><td>${m.minScore||''}/${m.minScoreOrder||''}</td></tr>`);
+  h+=`<div class="cols"><div class="col card"><h3>历年录取分数线</h3><table><thead><tr><th>年份</th><th>批次</th><th>最低分/位次</th><th>科目</th></tr></thead><tbody>`;
+  d.scores.forEach(s=>h+=`<tr><td>${s.year}</td><td>${s.batchName||''}</td><td class="num">${s.minScore||''}/${s.minScoreOrder||''}</td><td>${s.curriculum||''}</td></tr>`);
+  h+=`</tbody></table></div><div class="col card"><h3>分专业录取分数线</h3><table><thead><tr><th>年份</th><th>专业</th><th>选科</th><th>最低分/位次</th></tr></thead><tbody>`;
+  d.majors.forEach(m=>h+=`<tr><td>${m.year}</td><td>${m.majorName}</td><td>${m.specialCourse||''}</td><td class="num">${m.minScore||''}/${m.minScoreOrder||''}</td></tr>`);
   h+=`</tbody></table></div></div>`;
   $('t1').innerHTML=h;sw(1);
 }

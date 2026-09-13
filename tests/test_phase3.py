@@ -13,8 +13,8 @@ DB = os.path.join(ROOT, "gaokao2025.sqlite")
 
 @pytest.fixture(scope="module", autouse=True)
 def _env():
-    if not os.path.exists(DB):
-        pytest.skip("no db")
+    if not os.path.exists(DB) or os.path.getsize(DB) < 100000:
+        pytest.skip("缺少包含完整数据的 gaokao2025.sqlite")
     os.environ["GAOKAO_DB"] = DB
     from core.db import reset_conn
 

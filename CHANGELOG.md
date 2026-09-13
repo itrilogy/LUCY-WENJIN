@@ -1,5 +1,27 @@
 # 变更日志
 
+## v1.3.0 / 鹿溪设计范式对齐与健壮性加固 — 2026-09-13
+
+### 设计系统与前端（对齐 LUXI Design System v1.1）
+- **中心化令牌接入**：引入 `static/tokens.css`，增补文字专用色（`--text-ok/danger/info/warn`）、5 档控件高度与输入框专属令牌。
+- **全域去 Emoji 化**：侧栏导航项替换为内嵌 24 视口 1.7 描边线性矢量 SVG 图标；清理 `index.html` 与 `static/js/`（`ai.js`, `quality.js`, `recommend.js`, `search.js`, `shortlist.js`）所有功能性与标题 Emoji。
+- **按钮层级系统**：每屏唯一实底鹿溪绿 Primary 按钮，其余统一收敛为 Secondary（描边）、Ghost 或 Danger。
+- **表单布局对齐**：重构定向志愿推荐配置面板（`.form-panel` + `.form-row` + `.input-addon-group`），位次输入框与「分→位」按钮高度锁定 36px 严密咬合，移除多层嵌套白框。
+- **无障碍与交互**：增加全局 `Esc` 退出 About 弹窗；统一使用 `--luxi-cyan` 焦点环；补充 `@media (prefers-reduced-motion: reduce)` 动效降级。
+
+### 品牌资产规范（P0 合规）
+- **标识职能明确**：写实主标不进入产品 UI；侧栏底部与关于页统一使用角本位实验室符号标（`luxi-lab.svg` / `luxi-lab-inverse.svg`）。
+- **双标等大原则**：关于页模态框与 README 双标位中，产品方标与实验室符号标严格落实并排等大（48×48 / 64×64）。
+- **产品方标同构**：重构 `favicon.svg` 与 `logo.svg` 为 48×48 鹿溪绿砖（`.brick`）+ 24 视口双枝航道 glyph（stroke 1.7）+ 水平溪流 + 标题金星。
+
+### 核心架构与健壮性加固
+- **数据库自愈建表**：`core/db.py` 内置 `init_schema()`，初次连接或空库启动时自动完成 9 张核心表与索引的创建，彻底杜绝 `no such table` 异常。
+- **空库安全防护**：`/api/filters` 与 `/api/quality` 增加空表安全取值与年份默认回退；启动时打印高校数据录入统计与数据导入提示。
+- **环境变量注入**：`core/config.py` 支持自动读取根目录 `.env`，提供 `.env.example` 模板，`.gitignore` 忽略 `.env` 防密钥泄漏。
+- **推演诚实性声明**：推荐卡片与 AI 对话区域增加置信边界与“推演非高校录取承诺”口径标注。
+
+---
+
 ## v1.2.2 / 文档与品牌资产 — 2026-08-12
 
 ### 文档

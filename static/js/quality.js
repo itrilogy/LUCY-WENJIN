@@ -26,7 +26,7 @@ async function loadQuality(){
     if(d.rankTable&&d.rankTable.length){
       h+='<table><thead><tr><th>年</th><th>科类</th><th>行数</th><th>分范围</th><th>来源</th></tr></thead><tbody>';
       d.rankTable.forEach(r=>{
-        const src=r.source==='baidu'?'✅ baidu':r.source;
+        const src=r.source==='baidu'?'官方数据(Baidu)':r.source;
         h+=`<tr><td>${r.year}</td><td>${r.curriculum}</td><td>${r.n}</td><td>${r.minScore}–${r.maxScore}</td><td>${src}</td></tr>`;
       });
       h+='</tbody></table>';
@@ -34,9 +34,9 @@ async function loadQuality(){
       h+='<p style="color:var(--muted)">尚未构建。请从百度拉取官方一分一段，或生成近似表。</p>';
     }
     h+=`<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn btn-sm" onclick="rebuildRankTable('baidu')">⬇️ 百度官方一分一段</button>
-      <button class="btn btn-sm" onclick="rebuildRankTable('approx')">重建近似表</button>
-      <button class="btn btn-sm" onclick="runCalibration()">🎚 概率校准</button>
+      <button class="btn btn-secondary btn-sm" onclick="rebuildRankTable('baidu')">拉取官方一分一段</button>
+      <button class="btn btn-secondary btn-sm" onclick="rebuildRankTable('approx')">重建近似表</button>
+      <button class="btn btn-secondary btn-sm" onclick="runCalibration()">运行概率校准</button>
     </div></div>`;
     if(d.calibration){
       const lg=d.calibration.logistic||{};

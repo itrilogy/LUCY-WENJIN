@@ -4,6 +4,7 @@ __pycache__/
 *.sqlite-shm
 *.sqlite-wal
 gaokao2025.sqlite
+.env
 *.bak
 *.bak2
 .~lock*

@@ -68,6 +68,20 @@ def api_health():
 @app.route("/api/filters")
 @protect
 def api_filters():
+    from core.config import PLAN_YEAR, SCORE_YEAR
+
+    years = [
+        r["year"]
+        for r in query(
+            "SELECT DISTINCT year FROM majorscore ORDER BY year DESC"
+        )
+    ]
+    plan_years = [
+        r["year"]
+        for r in query(
+            "SELECT DISTINCT year FROM college_plan ORDER BY year DESC"
+        )
+    ]
     return jsonify(
         {
             "provinces": [
@@ -88,18 +102,8 @@ def api_filters():
                     "SELECT DISTINCT nature FROM college_info WHERE nature!='' ORDER BY nature"
                 )
             ],
-            "years": [
-                r["year"]
-                for r in query(
-                    "SELECT DISTINCT year FROM majorscore ORDER BY year DESC"
-                )
-            ],
-            "planYears": [
-                r["year"]
-                for r in query(
-                    "SELECT DISTINCT year FROM college_plan ORDER BY year DESC"
-                )
-            ],
+            "years": years if years else [SCORE_YEAR, str(int(SCORE_YEAR) - 1)],
+            "planYears": plan_years if plan_years else [PLAN_YEAR],
         }
     )
 
@@ -682,14 +686,18 @@ def api_quality():
     from core.config import PLAN_YEAR, SCORE_YEAR
     from core.recommend.calibrate import load_meta
 
-    plan_schools = query(
+    plan_schools_row = query(
         "SELECT count(DISTINCT legalName) c FROM college_plan WHERE year=?",
         (PLAN_YEAR,),
-    )[0]["c"]
-    score_schools = query(
+    )
+    plan_schools = plan_schools_row[0]["c"] if plan_schools_row else 0
+
+    score_schools_row = query(
         "SELECT count(DISTINCT legalName) c FROM schoolscore WHERE year=?",
         (SCORE_YEAR,),
-    )[0]["c"]
+    )
+    score_schools = score_schools_row[0]["c"] if score_schools_row else 0
+
     ss_top = query(
         """
         SELECT selectSubjects, count(1) n FROM college_plan
@@ -706,10 +714,10 @@ def api_quality():
             "scoreYear": SCORE_YEAR,
             "planYear": PLAN_YEAR,
             "counts": {
-                "college_info": query("SELECT count(1) c FROM college_info")[0]["c"],
-                "schoolscore": query("SELECT count(1) c FROM schoolscore")[0]["c"],
-                "majorscore": query("SELECT count(1) c FROM majorscore")[0]["c"],
-                "college_plan": query("SELECT count(1) c FROM college_plan")[0]["c"],
+                "college_info": (query("SELECT count(1) c FROM college_info") or [{"c": 0}])[0]["c"],
+                "schoolscore": (query("SELECT count(1) c FROM schoolscore") or [{"c": 0}])[0]["c"],
+                "majorscore": (query("SELECT count(1) c FROM majorscore") or [{"c": 0}])[0]["c"],
+                "college_plan": (query("SELECT count(1) c FROM college_plan") or [{"c": 0}])[0]["c"],
             },
             "coverage": {
                 "planSchools": plan_schools,
@@ -723,5 +731,11 @@ def api_quality():
 
 
 if __name__ == "__main__":
+    from core.db import get_db_path, query
+
+    school_count = (query("SELECT count(1) c FROM college_info") or [{"c": 0}])[0]["c"]
     print(f"问津 · WenJin 高考决策系统: http://127.0.0.1:{PORT}  (debug={DEBUG})")
+    print(f"数据库文件: {get_db_path()} (已录入高校数: {school_count})")
+    if school_count == 0:
+        print("[提示] 当前数据库为空表状态。请通过爬虫爬取或导入 gaokao2025.sqlite 补充数据。")
     app.run(host=HOST, port=PORT, debug=DEBUG, threaded=True)

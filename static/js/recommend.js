@@ -36,24 +36,23 @@ async function rec(){
   if(r.keywordsExpanded&&r.keywordsExpanded.length>1){
     expandNote=` | 专业簇扩展 ${r.keywordsExpanded.slice(0,6).join('、')}${r.keywordsExpanded.length>6?'…':''}`;
   }
-  $('rSum').innerHTML=`<div class="stats"><div class="stat" style="background:#e11d48"><span class="stat-num">${r.reach.length}</span>冲刺</div><div class="stat" style="background:#2563eb"><span class="stat-num">${r.match.length}</span>稳健</div><div class="stat" style="background:#16a34a"><span class="stat-num">${r.safe.length}</span>保底</div></div>
-    <p style="color:var(--muted);margin:8px 0 12px">参考: ${r.year}录取线 + ${r.planYear}招生计划 | 激进${r.aggressiveness||0}% 保底${r.safety||0}% | 过滤带宽×${r.rankFilterWidth||3} | 概率模型 ${r.probModel||'—'}${expandNote}</p>
-    <p style="font-size:11px;color:#94a3b8;margin:0 0 8px">录取概率为启发式估算（位次比+计划趋势），仅供参考，不构成录取承诺。</p>`;
-  const ti=[{k:'reach',l:'冲刺 ⚡',c:'tr'},{k:'match',l:'稳健 ✅',c:'tm'},{k:'safe',l:'保底 🛡️',c:'ts'}];
+  $('rSum').innerHTML=`<div class="stats"><div class="stat" style="background:#991B1B"><span class="stat-num">${r.reach.length}</span>冲刺梯度</div><div class="stat" style="background:#1E40AF"><span class="stat-num">${r.match.length}</span>稳健梯度</div><div class="stat" style="background:#065F46"><span class="stat-num">${r.safe.length}</span>保底梯度</div></div>
+    <p style="color:var(--text-muted);font-size:13px;margin:8px 0 12px">参考基准: ${r.year} 录取线 + ${r.planYear} 招生计划 | 激进 ${r.aggressiveness||0}% · 保底 ${r.safety||0}% | 过滤带宽 ×${r.rankFilterWidth||3} | 概率模型 ${r.probModel||'—'}${expandNote}</p>`;
+  const ti=[{k:'reach',l:'冲刺梯度',c:'tr'},{k:'match',l:'稳健梯度',c:'tm'},{k:'safe',l:'保底梯度',c:'ts'}];
   let html='';
   ti.forEach(t=>{
     const items=r[t.k];if(!items.length)return;
-    html+=`<div class="tier"><div class="tier-hd ${t.c}">${t.l} (${items.length}条)</div><div class="tier-bd"><table><thead><tr><th>#</th><th>学校</th><th>专业</th><th title="该专业录取最低分/最低位次">分/位次</th><th title="计划数 今/去">计划</th><th title="专业位次÷考生位次">位次比</th><th title="启发式录取概率">概率</th><th>总分</th><th>评分</th><th></th></tr></thead><tbody>`;
+    html+=`<div class="tier"><div class="tier-hd ${t.c}">${t.l} · ${items.length} 个专业志愿</div><div class="tier-bd"><table><thead><tr><th>#</th><th>学校</th><th>专业</th><th title="该专业录取最低分/最低位次">分/位次</th><th title="计划数 今/去">计划</th><th title="专业位次÷考生位次">位次比</th><th title="启发式录取概率">推演概率</th><th>总分</th><th>评分</th><th>操作</th></tr></thead><tbody>`;
     items.forEach((item,i)=>{
       const s=item.scores;
       const adm=item.admit||{};
       html+=`<tr><td>${i+1}</td><td class="link" onclick="sd('${esc(item.school)}')">${item.school}${tg(item.tag)}</td>
         <td>${item.majorName}</td><td>${item.majorScore||'-'}/${item.majorRank||'-'}</td>
-        <td style="font-size:12px">${item.planThisYear||'-'}/${item.planLastYear||'-'}</td><td>${item.ratio}</td>
+        <td style="font-size:12px">${item.planThisYear||'-'}/${item.planLastYear||'-'}</td><td class="num">${item.ratio}</td>
         <td>${probBadge(adm)}</td>
-        <td><strong>${s.total}</strong></td>
-        <td style="font-size:11px"><div class="bar-row"><span class="bar-label">位次</span><span class="bar" style="width:${s.rankScore*2.4}px;background:linear-gradient(90deg,#3b82f6,#60a5fa)"></span><span class="bar-val">${s.rankScore}</span></div><div class="bar-row"><span class="bar-label">标签</span><span class="bar" style="width:${s.tagScore*4}px;background:linear-gradient(90deg,#8b5cf6,#a78bfa)"></span><span class="bar-val">${s.tagScore}</span></div><div class="bar-row"><span class="bar-label">专业</span><span class="bar" style="width:${s.majorScore*5}px;background:linear-gradient(90deg,#f59e0b,#fbbf24)"></span><span class="bar-val">${s.majorScore}</span></div><div class="bar-row"><span class="bar-label">计划</span><span class="bar" style="width:${Math.max(0,s.planScore)*6.6}px;background:linear-gradient(90deg,#10b981,#34d399)"></span><span class="bar-val">${s.planScore}</span></div></td>
-        <td><button class="btn-sm" style="padding:3px 8px;font-size:11px;background:var(--card);color:var(--primary);border:1px solid var(--primary);box-shadow:none" onclick="addShortcut('${esc(item.school)}','${esc(item.majorName)}','${item.majorRank||'-'}','${s.total}','${t.k}','${adm.pct||''}')">➕</button></td></tr>`;
+        <td class="num"><strong>${s.total}</strong></td>
+        <td style="font-size:11px"><div class="bar-row"><span class="bar-label">位次</span><span class="bar" style="width:${s.rankScore*2.4}px;background:linear-gradient(90deg,#1D6FA5,#00D2FF)"></span><span class="bar-val">${s.rankScore}</span></div><div class="bar-row"><span class="bar-label">标签</span><span class="bar" style="width:${s.tagScore*4}px;background:linear-gradient(90deg,#0D5E42,#127A55)"></span><span class="bar-val">${s.tagScore}</span></div><div class="bar-row"><span class="bar-label">专业</span><span class="bar" style="width:${s.majorScore*5}px;background:linear-gradient(90deg,#8A6A05,#F1C40F)"></span><span class="bar-val">${s.majorScore}</span></div><div class="bar-row"><span class="bar-label">计划</span><span class="bar" style="width:${Math.max(0,s.planScore)*6.6}px;background:linear-gradient(90deg,#15803D,#4ADE88)"></span><span class="bar-val">${s.planScore}</span></div></td>
+        <td><button class="btn btn-secondary btn-sm" onclick="addShortcut('${esc(item.school)}','${esc(item.majorName)}','${item.majorRank||'-'}','${s.total}','${t.k}','${adm.pct||''}')">+ 备选</button></td></tr>`;
     });
     html+=`</tbody></table></div></div>`;
   });

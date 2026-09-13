@@ -1,95 +1,82 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-CN" data-product="wenjin">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>问津 · WenJin - 新高考志愿分析与梯度推演</title>
 <meta name="description" content="问津 · WenJin（鹿溪联合创新实验室出品）· 面向江西省的新高考志愿查询、冲稳保推荐与梯度推演">
 <meta name="theme-color" content="#0D5E42">
 <link rel="icon" href="/static/brand/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/static/brand/favicon.svg">
+<link rel="stylesheet" href="/static/tokens.css">
 <link rel="stylesheet" href="/static/style.css">
-<style>
-/* 多选组件 */
-.multi-wrap{position:relative;min-width:160px}
-.multi-input{display:flex;flex-wrap:wrap;gap:3px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--card);cursor:pointer;min-height:32px;align-items:center}
-.multi-input .ph{color:#999;font-size:13px}
-.multi-input .sel-tag{display:inline-flex;align-items:center;gap:2px;padding:2px 6px;background:var(--luxi-green,#0D5E42);color:#fff;border-radius:4px;font-size:12px}
-.multi-input .sel-tag .del{cursor:pointer;font-weight:700;margin-left:2px;font-size:14px;line-height:1}
-.multi-input .sel-tag .del:hover{opacity:.8}
-.multi-drop{display:none;position:absolute;top:100%;left:0;z-index:20;background:var(--card);border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,.1);max-height:200px;overflow-y:auto;min-width:200px;padding:4px;margin-top:2px}
-.multi-drop.show{display:block}
-.multi-drop .opt{padding:6px 12px;cursor:pointer;font-size:13px;border-radius:3px}
-.multi-drop .opt:hover{background:#f1f5f9}
-.multi-drop .opt.chk{background:#eff6ff;color:var(--primary);font-weight:500}
-/* 范围输入框 */
-.range-group{display:flex;align-items:center;gap:4px}
-.range-group input{padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;width:80px;text-align:center}
-.range-group .sep{color:#999;font-size:13px}
-.filter-label{font-size:11px;color:var(--muted);display:block;margin-bottom:1px}
-/* About */
-.overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.45);z-index:100;align-items:center;justify-content:center}
-.about-card{background:var(--card);border-radius:16px;padding:32px 40px;max-width:440px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.2);text-align:center;animation:slideUp .25s ease}
-@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-.about-card h2{font-size:20px;margin-bottom:4px;color:var(--text)}
-.about-card .slogan{color:var(--muted);font-size:13px;margin-bottom:16px;letter-spacing:1px}
-.about-card .dv{height:1px;background:var(--border);margin:16px 0}
-.about-card .info{font-size:14px;line-height:1.8;color:var(--text)}
-.about-card .info .lb{color:var(--muted);font-size:11px}
-.about-card .cls{display:inline-block;margin-top:16px;padding:6px 24px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px}
-/* ── A. 加载动画 ── */
-.spinner{display:inline-block;width:18px;height:18px;border:3px solid #e2e8f0;border-top-color:var(--primary);border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:8px}
-@keyframes spin{to{transform:rotate(360deg)}}
-/* ── B. Toast 通知 ── */
-.toast{position:fixed;top:20px;right:20px;z-index:9999;padding:12px 20px;border-radius:8px;color:#fff;font-size:14px;box-shadow:0 4px 16px rgba(0,0,0,.15);transform:translateX(120%);transition:transform .3s ease;max-width:360px}
-.toast.show{transform:translateX(0)}
-.toast.info{background:#2563eb}
-.toast.warn{background:#ea580c}
-.toast.err{background:#e11d48}
-/* ── C. 评分可视化柱状条 ── */
-.bar-row{display:flex;align-items:center;gap:4px;font-size:11px;line-height:1.4}
-.bar-row .bar{height:10px;border-radius:3px;min-width:2px;transition:width .3s}
-.bar-row .bar-label{width:28px;color:var(--muted);text-align:right;flex-shrink:0}
-.bar-row .bar-val{width:24px;color:var(--muted);flex-shrink:0}
-/* ── D. AI Markdown 表格 ── */
-.ai-msg table{border-collapse:collapse;margin:6px 0;font-size:12px;width:100%}
-.ai-msg th,.ai-msg td{border:1px solid var(--border);padding:4px 8px;text-align:left}
-.ai-msg th{background:#f1f5f9;font-weight:600}
-.ai-msg code{background:#f1f5f9;padding:1px 4px;border-radius:3px;font-size:12px}
-.ai-msg p{margin:4px 0}
-.ai-msg ul,.ai-msg ol{padding-left:18px;margin:4px 0}
-</style>
 </head>
 <body>
-<div class="sidebar" style="display:flex;flex-direction:column">
+
+<!-- ── 侧边栏（240px 规范工作台） ──────────────────────────────────────── -->
+<aside class="sidebar">
   <div class="brand-block">
-    <img class="brand-mark" src="/static/brand/favicon.svg" width="36" height="36" alt="问津 · WenJin">
+    <img class="brand-mark" src="/static/brand/favicon.svg" width="36" height="36" alt="问津 · WenJin 方标">
     <div class="brand-text">
       <div class="brand-title">问津 · WenJin <span class="brand-ver">v1.2</span></div>
       <div class="brand-sub">向道问津，顺溪成程</div>
     </div>
   </div>
-  <div class="nav">
-    <div class="nav-item active" data-tab><span>🏫</span><span>大学搜索</span></div>
-    <div class="nav-item" data-tab><span>📋</span><span>学校详情</span></div>
-    <div class="nav-item" data-tab><span>📚</span><span>专业反查</span></div>
-    <div class="nav-item" data-tab><span>📝</span><span>招生计划</span></div>
-    <div class="nav-item" data-tab><span>🎯</span><span>志愿推荐</span></div>
-    <div class="nav-item" data-tab><span>💬</span><span>AI分析</span></div>
-    <div class="nav-item" data-tab><span>📋</span><span>备选清单</span></div>
-    <div class="nav-item" data-tab><span>📊</span><span>数据质量</span></div>
-  </div>
-  <div class="nav" style="border-top:1px solid #334155;margin-top:auto;padding-top:8px">
-    <div class="nav-item" onclick="showAbout()" style="color:#64748b"><span>ⓘ</span><span>关于</span></div>
-    <div class="lab-foot">
-      <img src="/static/brand/luxi-lab-main.svg" alt="鹿溪联合创新实验室" class="lab-logo">
+
+  <nav class="nav">
+    <div class="nav-item active" data-tab>
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+      <span>大学搜索</span>
+    </div>
+    <div class="nav-item" data-tab>
+      <svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V10l7-5 7 5v11M9 21v-4h6v4"/></svg>
+      <span>学校详情</span>
+    </div>
+    <div class="nav-item" data-tab>
+      <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15z"/></svg>
+      <span>专业反查</span>
+    </div>
+    <div class="nav-item" data-tab>
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/></svg>
+      <span>招生计划</span>
+    </div>
+    <div class="nav-item" data-tab>
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg>
+      <span>志愿推荐</span>
+    </div>
+    <div class="nav-item" data-tab>
+      <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <span>AI分析</span>
+    </div>
+    <div class="nav-item" data-tab>
+      <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      <span>备选清单</span>
+    </div>
+    <div class="nav-item" data-tab>
+      <svg viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+      <span>数据质量</span>
+    </div>
+  </nav>
+
+  <div class="sidebar-foot">
+    <div class="about-btn" onclick="showAbout()" role="button" tabindex="0">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="8.01"/><line x1="12" y1="11" x2="12" y2="16"/></svg>
+      <span>关于问津</span>
+    </div>
+    <div class="sidebar-lab">
+      <img src="/static/brand/luxi-lab-inverse.svg" alt="鹿溪联合创新实验室" width="22" height="22">
+      <span class="sidebar-lab-text">鹿溪联合创新实验室</span>
     </div>
   </div>
-</div>
+</aside>
 
-<div class="main">
-<div class="page active" id="p0">
-  <h2>🏫 大学搜索</h2>
-  <div class="filters" style="flex-wrap:wrap">
+<!-- ── 主内容区 ──────────────────────────────────────────────────────────── -->
+<main class="main">
+
+<!-- Page 0: 大学搜索 -->
+<section class="page active" id="p0">
+  <h2>大学搜索</h2>
+  <div class="filters">
     <input id="f_name" placeholder="学校名称" style="width:160px">
     <div class="multi-wrap">
       <div class="multi-input" onclick="td('mdp')"><span class="ph" id="fpph">省份</span></div>
@@ -107,26 +94,28 @@
     <label><input type="checkbox" value="211" class="ftag">211</label>
     <label><input type="checkbox" value="双一流" class="ftag">双一流</label>
     <label><input type="checkbox" value="强基计划" class="ftag">强基</label>
-    <button class="btn" onclick="search(1)">🔍 查询</button>
+    <button class="btn btn-primary" onclick="search(1)">查询</button>
   </div>
   <div id="t0"></div>
-</div>
+</section>
 
-<div class="page" id="p1">
+<!-- Page 1: 学校详情 -->
+<section class="page" id="p1">
   <div class="link" onclick="sw(0)" style="margin-bottom:8px">← 返回搜索</div>
   <div style="display:flex;gap:8px;margin-bottom:12px">
-    <input id="s_name" placeholder="输入学校名称直接查看详情" style="flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px" onkeydown="if(event.key==='Enter')sd(document.getElementById('s_name').value.trim())">
-    <button class="btn" onclick="sd(document.getElementById('s_name').value.trim())">查看</button>
+    <input id="s_name" placeholder="输入学校名称直接查看详情" style="flex:1" onkeydown="if(event.key==='Enter')sd(document.getElementById('s_name').value.trim())">
+    <button class="btn btn-primary" onclick="sd(document.getElementById('s_name').value.trim())">查看</button>
   </div>
   <div id="t1"></div>
-</div>
+</section>
 
-<div class="page" id="p2">
-  <h2>📚 专业反查</h2>
-  <div class="filters" style="flex-wrap:wrap">
+<!-- Page 2: 专业反查 -->
+<section class="page" id="p2">
+  <h2>专业录取反查</h2>
+  <div class="filters">
     <input id="m_name" placeholder="专业名称（模糊搜索）" style="width:220px">
-    <button class="btn" onclick="sm()">🔍 查询</button>
-    <div style="width:100%;display:flex;flex-wrap:wrap;gap:8px;align-items:end;margin-top:4px">
+    <button class="btn btn-primary" onclick="sm()">查询</button>
+    <div style="width:100%;display:flex;flex-wrap:wrap;gap:8px;align-items:end;margin-top:6px">
       <div>
         <span class="filter-label">年份</span>
         <div class="multi-wrap" style="min-width:140px">
@@ -135,21 +124,22 @@
         </div>
       </div>
       <div>
-        <span class="filter-label">位次</span>
+        <span class="filter-label">位次区间</span>
         <div class="range-group"><input id="mr_min" placeholder="下限"><span class="sep">—</span><input id="mr_max" placeholder="上限"></div>
       </div>
       <div>
-        <span class="filter-label">分数</span>
+        <span class="filter-label">分数区间</span>
         <div class="range-group"><input id="ms_min" placeholder="下限"><span class="sep">—</span><input id="ms_max" placeholder="上限"></div>
       </div>
     </div>
   </div>
   <div id="t2"></div>
-</div>
+</section>
 
-<div class="page" id="p3">
-  <h2>📝 招生计划</h2>
-  <div class="filters" style="flex-wrap:wrap">
+<!-- Page 3: 招生计划 -->
+<section class="page" id="p3">
+  <h2>高校招生计划</h2>
+  <div class="filters">
     <input id="p_school" placeholder="学校名称" style="width:150px">
     <input id="p_major" placeholder="专业名称" style="width:150px">
     <div class="multi-wrap" style="min-width:120px">
@@ -163,155 +153,230 @@
     <label><input type="checkbox" value="985" class="ptag">985</label>
     <label><input type="checkbox" value="211" class="ptag">211</label>
     <label><input type="checkbox" value="双一流" class="ptag">双一流</label>
-    <button class="btn" onclick="sp()">🔍 查询</button>
+    <button class="btn btn-primary" onclick="sp()">查询</button>
   </div>
   <div id="t3"></div>
-</div>
+</section>
 
-<div class="page" id="p4">
-  <h2>🎯 志愿推荐</h2>
+<!-- Page 4: 志愿推荐 -->
+<section class="page" id="p4">
+  <h2>定向志愿推荐</h2>
   <div class="card">
-    <div style="display:flex;flex-wrap:wrap;gap:16px">
-      <div style="flex:1;min-width:300px">
-        <h3 style="font-size:14px;margin-bottom:8px">基本信息</h3>
-        <div class="filters" style="flex-wrap:wrap">
-          <div class="fg"><label>分数</label><input id="r_score" type="number" placeholder="585" style="width:80px"></div>
-          <div class="fg"><label>位次</label><input id="r_rank" type="number" placeholder="18500" style="width:100px">
-            <button type="button" class="btn-sm" style="margin-left:4px;padding:2px 8px;font-size:11px" onclick="lookupRankFromScore()" title="用近似一分一段估位次">分→位</button>
+    <div class="cols">
+      <!-- 左侧：基本考分与选科 -->
+      <div class="col form-panel">
+        <h3 style="font-size:15px;margin-bottom:2px">基本考分与选科</h3>
+
+        <!-- 第一行：考分、位次、首选科目 -->
+        <div class="form-row">
+          <div class="field">
+            <label class="field-label" for="r_score">高考成绩</label>
+            <input id="r_score" type="number" placeholder="例如 585" style="width:100px;text-align:center">
           </div>
-          <div class="fg"><label>首选</label>
-            <label style="font-weight:normal"><input type="radio" name="r_first" value="物理" checked>物理</label>
-            <label style="font-weight:normal"><input type="radio" name="r_first" value="历史">历史</label>
+
+          <div class="field">
+            <label class="field-label" for="r_rank">全省位次</label>
+            <div class="input-addon-group">
+              <input id="r_rank" type="number" placeholder="例如 18500" style="width:105px;text-align:center">
+              <button type="button" class="btn btn-secondary" onclick="lookupRankFromScore()" title="基于一分一段表根据分数自动换算位次">分→位</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label">首选科目</label>
+            <div class="choice-group">
+              <label><input type="radio" name="r_first" value="物理" checked> 物理</label>
+              <label><input type="radio" name="r_first" value="历史"> 历史</label>
+            </div>
           </div>
         </div>
-        <div class="filters" style="margin-top:4px">
-          <span style="font-size:12px;color:var(--muted);white-space:nowrap">再选(按偏好顺序勾选):</span>
-          <label style="font-weight:normal"><input type="checkbox" value="化学" class="r_second">化学</label>
-          <label style="font-weight:normal"><input type="checkbox" value="生物" class="r_second">生物</label>
-          <label style="font-weight:normal"><input type="checkbox" value="政治" class="r_second">政治</label>
-          <label style="font-weight:normal"><input type="checkbox" value="地理" class="r_second">地理</label>
+
+        <!-- 第二行：再选科目 -->
+        <div class="field">
+          <label class="field-label">再选科目（请勾选考生的再选科目）</label>
+          <div class="choice-group">
+            <label><input type="checkbox" value="化学" class="r_second"> 化学</label>
+            <label><input type="checkbox" value="生物" class="r_second"> 生物</label>
+            <label><input type="checkbox" value="政治" class="r_second"> 政治</label>
+            <label><input type="checkbox" value="地理" class="r_second"> 地理</label>
+          </div>
         </div>
-        <div class="filters" style="margin-top:4px">
-          <span style="font-size:12px;color:var(--muted)">专业关键词/簇:</span>
-          <input id="r_keyword" placeholder="计算机,医学,师范" style="width:160px">
-          <span style="font-size:11px;color:#999">支持专业簇扩展</span>
-          <label style="font-weight:normal;font-size:12px"><input type="radio" name="r_kw_mode" value="optional" checked>可选</label>
-          <label style="font-weight:normal;font-size:12px"><input type="radio" name="r_kw_mode" value="mandatory">强制</label>
-          <label style="font-weight:normal;font-size:12px"><input type="checkbox" id="r_cluster" checked>专业簇</label>
+
+        <!-- 第三行：专业关键词 -->
+        <div class="field">
+          <label class="field-label" for="r_keyword">意向专业 / 专业簇</label>
+          <div class="form-row" style="align-items:center;gap:12px">
+            <input id="r_keyword" placeholder="例如 计算机, 临床医学, 师范" style="width:200px">
+            <div class="choice-group">
+              <label><input type="radio" name="r_kw_mode" value="optional" checked> 可选</label>
+              <label><input type="radio" name="r_kw_mode" value="mandatory"> 强制</label>
+              <label title="开启后将关联相近专业族群"><input type="checkbox" id="r_cluster" checked> 专业簇扩展</label>
+            </div>
+          </div>
         </div>
       </div>
-      <div style="flex:1;min-width:250px">
-        <h3 style="font-size:14px;margin-bottom:8px">优先级配置</h3>
-        <div class="filters" style="flex-wrap:wrap">
-          <span style="font-size:12px;color:var(--muted)">省份:</span>
-          <div class="multi-wrap" style="min-width:160px">
-            <div class="multi-input" onclick="td('rdp')"><span class="ph" id="rph">省份</span></div>
-            <div class="multi-drop" id="rdp"></div>
+
+      <!-- 右侧：梯度与偏好配置 -->
+      <div class="col form-panel" style="border-left:1px solid var(--border-subtle);padding-left:var(--space-5)">
+        <h3 style="font-size:15px;margin-bottom:2px">梯度与偏好配置</h3>
+
+        <!-- 第一行：意向省份 & 院校标签匹配 -->
+        <div class="form-row">
+          <div class="field">
+            <label class="field-label">意向省份</label>
+            <div class="multi-wrap" style="min-width:140px">
+              <div class="multi-input" onclick="td('rdp')"><span class="ph" id="rph">全部省份</span></div>
+              <div class="multi-drop" id="rdp"></div>
+            </div>
           </div>
-          <span style="font-size:12px;color:var(--muted)">标签模式:</span>
-          <label style="font-weight:normal;font-size:12px"><input type="radio" name="r_tag_mode" value="or" checked>OR(任一)</label>
-          <label style="font-weight:normal;font-size:12px"><input type="radio" name="r_tag_mode" value="and">AND(全部)</label>
+
+          <div class="field">
+            <label class="field-label">院校标签模式</label>
+            <div class="choice-group">
+              <label><input type="radio" name="r_tag_mode" value="or" checked> 任一满足</label>
+              <label><input type="radio" name="r_tag_mode" value="and"> 全部满足</label>
+            </div>
+          </div>
         </div>
-        <div class="filters" style="flex-wrap:wrap">
-          <label style="font-weight:normal"><input type="checkbox" value="985" class="r_tag">985(10分)</label>
-          <label style="font-weight:normal"><input type="checkbox" value="211" class="r_tag">211(8分)</label>
-          <label style="font-weight:normal"><input type="checkbox" value="双一流" class="r_tag">双一流(5分)</label>
-          <label style="font-weight:normal"><input type="checkbox" value="强基计划" class="r_tag">强基(2分)</label>
+
+        <!-- 第二行：重点院校筛选 -->
+        <div class="field">
+          <label class="field-label">重点院校类别</label>
+          <div class="choice-group">
+            <label><input type="checkbox" value="985" class="r_tag"> 985</label>
+            <label><input type="checkbox" value="211" class="r_tag"> 211</label>
+            <label><input type="checkbox" value="双一流" class="r_tag"> 双一流</label>
+            <label><input type="checkbox" value="强基计划" class="r_tag"> 强基计划</label>
+          </div>
         </div>
-        <div class="filters" style="flex-wrap:wrap">
-          <span style="font-size:12px;color:var(--muted)">冲刺激进度:</span>
-          <input id="r_aggr" type="range" min="0" max="100" value="50" style="width:100px" oninput="ag()">
-          <span id="r_ag" style="font-size:12px;color:var(--muted)">50%</span>
-          <span style="font-size:12px;color:var(--muted);margin-left:12px">保底程度:</span>
-          <input id="r_safe" type="range" min="0" max="100" value="50" style="width:100px" oninput="sf()">
-          <span id="r_sf" style="font-size:12px;color:var(--muted)">50%</span>
-          <label style="font-weight:normal;font-size:12px;margin-left:12px"><input type="checkbox" id="r_plan" checked>参考计划(含趋势)</label>
+
+        <!-- 第三行：滑块调节 -->
+        <div class="form-row" style="gap:24px">
+          <div class="field">
+            <label class="field-label">冲刺激进度</label>
+            <div class="slider-item">
+              <input id="r_aggr" type="range" min="0" max="100" value="50" oninput="ag()">
+              <span id="r_ag" class="slider-val">50%</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label">保底宽容度</label>
+            <div class="slider-item">
+              <input id="r_safe" type="range" min="0" max="100" value="50" oninput="sf()">
+              <span id="r_sf" class="slider-val">50%</span>
+            </div>
+          </div>
         </div>
-        <div class="filters" style="flex-wrap:wrap;margin-top:2px">
-          <span style="font-size:12px;color:var(--muted)">位次过滤阈值:</span>
-          <input id="r_rfw" type="range" min="1" max="8" step="0.5" value="3" style="width:100px" oninput="rf()">
-          <span id="r_rf" style="font-size:12px;color:var(--muted)">3.0</span>
-          <span style="font-size:11px;color:#94a3b8">越小越严，越大越宽</span>
+
+        <!-- 第四行：排序规则与生成方案按钮 -->
+        <div class="form-row" style="align-items:center;justify-content:space-between;margin-top:auto;padding-top:var(--space-2)">
+          <div class="choice-group">
+            <label><input type="radio" name="r_sort" value="score" checked> 综合推荐度</label>
+            <label><input type="radio" name="r_sort" value="prob"> 录取概率</label>
+            <label title="参考今年与去年招生计划变动趋势"><input type="checkbox" id="r_plan" checked> 结合计划趋势</label>
+          </div>
+          <button class="btn btn-primary" onclick="rec()">生成推荐方案</button>
         </div>
-        <div class="filters" style="flex-wrap:wrap;margin-top:2px">
-          <span style="font-size:12px;color:var(--muted)">排序:</span>
-          <label style="font-weight:normal;font-size:12px"><input type="radio" name="r_sort" value="score" checked>综合分</label>
-          <label style="font-weight:normal;font-size:12px"><input type="radio" name="r_sort" value="prob">录取概率</label>
-        </div>
-        <button class="btn" onclick="rec()" style="margin-top:4px">🎯 推荐</button>
       </div>
     </div>
   </div>
-  <div id="rLoading" style="display:none;padding:24px;text-align:center;color:var(--muted)"><span class="spinner"></span>正在分析学校录取数据...</div>
+
+  <div id="rLoading" style="display:none;padding:24px;text-align:center;color:var(--text-muted)">
+    <span class="spinner"></span>正在基于历年录取与选科模型进行多维推演...
+  </div>
   <div id="rSum"></div>
   <div id="rRes"></div>
-  <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
-    <button class="btn btn-sm" onclick="printReport()">🖨️ 导出PDF</button>
-    <button class="btn btn-sm" onclick="exportRecommendCsv()">📥 导出CSV</button>
-  </div>
-</div>
 
-<div class="page" id="p5">
-  <h2>💬 AI 志愿分析</h2>
-  <div id="aiChat" style="background:var(--card);border-radius:8px;padding:16px;min-height:400px;max-height:560px;overflow-y:auto;margin-bottom:12px;display:flex;flex-direction:column;gap:12px">
-    <div class="ai-msg" style="background:#f0f4ff;padding:10px 14px;border-radius:8px;align-self:flex-start;max-width:85%">
-      💡 你好！我是你的高考志愿助手。支持推荐、专业反查、多校对比与录取概率（流式）。请问你的高考分数是多少？
+  <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    <button class="btn btn-secondary btn-sm" onclick="printReport()">导出 PDF 报表</button>
+    <button class="btn btn-secondary btn-sm" onclick="exportRecommendCsv()">导出 CSV 数据</button>
+  </div>
+
+  <div class="statement-note">
+    <strong>推演口径与置信边界：</strong> 梯度分档（冲 / 稳 / 保）基于江西新高考 3+1+2 历年分段与梯度密度函数换算。推演数据旨在辅助志愿次序规划，不构成任何形式的高校录取保证。
+  </div>
+</section>
+
+<!-- Page 5: AI 志愿分析 -->
+<section class="page" id="p5">
+  <h2>AI 志愿推演助手</h2>
+  <div id="aiChat" style="background:var(--bg-card);border-radius:var(--radius-md);border:1px solid var(--border-subtle);padding:16px;min-height:380px;max-height:540px;overflow-y:auto;margin-bottom:12px;display:flex;flex-direction:column;gap:12px">
+    <div class="ai-msg" style="background:var(--bg-sunken);padding:10px 14px;border-radius:var(--radius-sm);align-self:flex-start;max-width:85%;border-left:3px solid var(--color-primary)">
+      你好！我是问津志愿推演助手。支持志愿反查、梯度分布测算、多校横向对比与流式概率评估。请问你的预估成绩、位次或意向专业是什么？
     </div>
   </div>
   <div style="display:flex;gap:8px">
-    <input id="aiInput" placeholder="输入你的回答..." style="flex:1;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:14px" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAi()}">
-    <button class="btn" onclick="sendAi()">发送</button>
-    <button class="btn" style="background:var(--muted)" onclick="resetAi()">↻ 重置</button>
+    <input id="aiInput" placeholder="输入你的问题或志愿偏好..." style="flex:1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAi()}">
+    <button class="btn btn-primary" onclick="sendAi()">发送</button>
+    <button class="btn btn-ghost" onclick="resetAi()">重置会话</button>
   </div>
-</div>
-</div>
-
-<div class="page" id="p6">
-  <h2>📋 备选清单</h2>
-  <p style="color:var(--muted);margin-bottom:12px">本地 localStorage + 可选云端 session 同步</p>
-  <div id="shortlistContent" style="color:var(--muted);padding:16px">暂无备选，请先在志愿推荐页点击 ➕ 添加</div>
-  <div style="margin-top:8px;display:none;flex-wrap:wrap;gap:8px" id="shortlistActions">
-    <button class="btn btn-sm" onclick="clearShortlist()">🗑️ 清空备选</button>
-    <button class="btn btn-sm" onclick="printShortlist()">🖨️ 打印</button>
-    <button class="btn btn-sm" onclick="exportShortlistCsv()">📥 CSV</button>
-    <button class="btn btn-sm" onclick="syncShortlistCloud()">☁️ 同步云端</button>
-    <button class="btn btn-sm" onclick="pullShortlistCloud()">⬇️ 拉取云端</button>
+  <div class="statement-note" style="margin-top:8px">
+    <strong>推理提示：</strong> AI 对话内容基于大语言模型实时生成，分析结论结合系统内置 SQLite 历史数据库。模型估算不可替代官方招生章程。
   </div>
-</div>
+</section>
 
-<div class="page" id="p7">
-  <h2>📊 数据质量</h2>
-  <p style="color:var(--muted);margin-bottom:12px">覆盖率、选科分布、近似一分一段表状态</p>
-  <div id="qualityBox">打开本页时自动加载…</div>
-</div>
-</div>
+<!-- Page 6: 备选清单 -->
+<section class="page" id="p6">
+  <h2>备选志愿清单</h2>
+  <p style="color:var(--text-muted);font-size:var(--fs-small);margin-bottom:12px">已加入备选池的院校专业组（支持本地保存与云端同步）</p>
+  <div id="shortlistContent" style="color:var(--text-muted);padding:16px;background:var(--bg-card);border-radius:var(--radius-md);border:1px solid var(--border-subtle)">暂无备选，请在志愿推荐结果中点击 ➕ 添加</div>
+  <div style="margin-top:12px;display:none;flex-wrap:wrap;gap:8px" id="shortlistActions">
+    <button class="btn btn-danger btn-sm" onclick="clearShortlist()">清空清单</button>
+    <button class="btn btn-secondary btn-sm" onclick="printShortlist()">打印志愿表</button>
+    <button class="btn btn-secondary btn-sm" onclick="exportShortlistCsv()">导出 CSV</button>
+    <button class="btn btn-secondary btn-sm" onclick="syncShortlistCloud()">同步至云端</button>
+    <button class="btn btn-secondary btn-sm" onclick="pullShortlistCloud()">从云端拉取</button>
+  </div>
+</section>
 
-<!-- Toast 通知容器 -->
-<div id="toast" class="toast"></div>
+<!-- Page 7: 数据质量 -->
+<section class="page" id="p7">
+  <h2>数据质量与监控</h2>
+  <p style="color:var(--text-muted);font-size:var(--fs-small);margin-bottom:12px">历年位次覆盖率、选科映射分布与一分一段数据对齐状态</p>
+  <div id="qualityBox" class="card">打开本页时自动加载…</div>
+</section>
 
+</main>
+
+<!-- Toast 反馈容器 -->
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<!-- ── 关于模态框（落实双标等大 48×48 并排 & 全键盘 Esc 退出） ──────────── -->
 <div class="overlay" id="aboutOverlay" onclick="if(event.target===this)hideAbout()" style="display:none">
-  <div class="about-card">
-    <img src="/static/brand/logo.svg" alt="问津 · WenJin" class="about-product-logo">
+  <div class="about-card" role="dialog" aria-modal="true" aria-labelledby="about-title">
+    <!-- 双标等大并排（48×48 产品方标 × 48×48 实验室符号标） -->
+    <div class="double-mark-container">
+      <div class="double-mark-item" title="问津 · WenJin 产品方标">
+        <img src="/static/brand/favicon.svg" alt="问津 · WenJin 方标" width="48" height="48">
+      </div>
+      <span class="double-mark-sep">×</span>
+      <div class="double-mark-item" title="鹿溪联合创新实验室 符号标">
+        <img src="/static/brand/luxi-lab.svg" alt="鹿溪联合创新实验室 符号标" width="48" height="48">
+      </div>
+    </div>
+    <h2 id="about-title">问津 · WenJin</h2>
     <div class="slogan">向道问津，顺溪成程</div>
     <div class="dv"></div>
     <div class="info">
-      <div class="lb">出品</div>
-      <img src="/static/brand/luxi-lab-main.svg" alt="鹿溪联合创新实验室" class="about-lab-logo">
+      <div class="lb">出品单位</div>
       <div>鹿溪联合创新实验室（LUXI Joint Innovation Lab）</div>
-      <div style="margin-top:6px">洪浩耀 · 江西省上饶市第一中学 · 高三一班</div>
-      <div class="dv"></div>
-      <div class="lb">数据来源</div>
-      <div>百度高考 API · 百度一分一段（opendata）· 中国教育在线</div>
-      <div class="lb" style="margin-top:8px">技术栈</div>
-      <div>Flask · SQLite · DeepSeek · 推荐引擎 v3.2</div>
-      <div class="lb" style="margin-top:8px">版本</div>
-      <div>v1.2 · 江西 3+1+2 · 概率校准 + 官方一分一段</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:2px">理数·三思（数理推演）矩阵</div>
+      <div style="margin-top:4px">洪浩耀 · 江西省上饶市第一中学</div>
+
+      <div class="lb">数据源与口径基准</div>
+      <div>百度高考数据接口 · 官方一分一段表 · 阳光高考信息平台</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:2px">
+        本系统所有梯度分析与录取概率均为数理推演估算，非高校官方录取承诺。
+      </div>
+
+      <div class="lb">技术架构与规范</div>
+      <div>Flask + SQLite · 推荐引擎 v3.2 · 鹿溪设计范式 v1.1</div>
     </div>
     <div class="dv"></div>
-    <button class="cls" onclick="hideAbout()">知道了</button>
+    <button class="cls" onclick="hideAbout()" id="aboutCloseBtn">知道了</button>
   </div>
 </div>
-
 
 <script src="/static/js/utils.js"></script>
 <script src="/static/js/multi.js"></script>
@@ -321,6 +386,18 @@
 <script src="/static/js/shortlist.js"></script>
 <script src="/static/js/quality.js"></script>
 <script src="/static/js/main.js"></script>
+
+<script>
+// 全局 Esc 键监听：支持退出模态框与浮层（交互铁律第 2 条）
+window.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    const overlay = document.getElementById('aboutOverlay');
+    if (overlay && overlay.style.display !== 'none') {
+      hideAbout();
+    }
+  }
+});
+</script>
 
 </body>
 </html>

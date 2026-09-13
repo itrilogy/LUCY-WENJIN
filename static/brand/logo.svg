@@ -1,36 +1,31 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 56" role="img" aria-label="问津 · WenJin">
-  <!-- 横版产品字锁：标识 + 中文名 + 副标 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 56" role="img" aria-label="问津 · WenJin 横版字锁">
+  <!--
+    问津 · WenJin · 横版字锁（产品方标 + 标准字锁）
+    遵循鹿溪设计范式 v1.1
+  -->
   <defs>
-    <linearGradient id="tile" x1="4" y1="4" x2="48" y2="48" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#127A55"/>
-      <stop offset="100%" stop-color="#0D5E42"/>
-    </linearGradient>
-    <linearGradient id="stream" x1="10" y1="40" x2="42" y2="42" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#00D2FF" stop-opacity="0.3"/>
-      <stop offset="50%" stop-color="#00D2FF" stop-opacity="0.95"/>
-      <stop offset="100%" stop-color="#7CF0FF" stop-opacity="0.5"/>
+    <linearGradient id="logo-stream" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00D2FF" stop-opacity="0.2"/>
+      <stop offset="50%" stop-color="#00D2FF" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#7CF0FF" stop-opacity="0.55"/>
     </linearGradient>
   </defs>
 
-  <!-- mark tile -->
-  <rect x="2" y="4" width="48" height="48" rx="12" fill="url(#tile)"/>
-  <circle cx="14" cy="14" r="10" fill="#fff" opacity="0.06"/>
-
-  <path d="M16 36 C16 26.5, 20.5 21, 26 18.5 C31.5 21, 36 26.5, 36 36"
-        fill="none" stroke="#F5F7FA" stroke-width="2.2" stroke-linecap="round"/>
-  <path d="M20.2 24.2 C18.6 21.2, 16 19.2, 13.5 18.2" fill="none" stroke="#F5F7FA" stroke-width="1.7" stroke-linecap="round"/>
-  <path d="M31.8 24.2 C33.4 21.2, 36 19.2, 38.5 18.2" fill="none" stroke="#F5F7FA" stroke-width="1.7" stroke-linecap="round"/>
-  <path d="M26 35.5 L26 41.5" fill="none" stroke="#F5F7FA" stroke-width="1.9" stroke-linecap="round"/>
-  <circle cx="26" cy="43.5" r="1.8" fill="#F1C40F"/>
-  <path d="M10 45 C15.5 43, 20.5 46.5, 26 44.8 C31 43.4, 35.5 44.5, 42 43.5"
-        fill="none" stroke="url(#stream)" stroke-width="1.8" stroke-linecap="round"/>
-  <g transform="translate(40 14)">
-    <path d="M0-2.4 L0.55-0.55 L2.4 0 L0.55 0.55 L0 2.4 L-0.55 0.55 L-2.4 0 L-0.55-0.55 Z" fill="#00D2FF"/>
+  <!-- 产品方标（48×48） -->
+  <g transform="translate(4, 4)">
+    <rect width="48" height="48" rx="12" fill="#0D5E42"/>
+    <g transform="translate(12, 10)" fill="none" stroke="#F5F7FA" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 18c4-10 8-10 12 0"/>
+      <path d="M12 8v4"/>
+      <circle cx="12" cy="7" r="1.6" fill="#F1C40F" stroke="none"/>
+    </g>
+    <rect x="8" y="39" width="32" height="3" rx="1.5" fill="url(#logo-stream)"/>
+    <polygon points="41,5 41.6,6.8 43.5,6.8 41.9,7.9 42.5,9.6 41,8.5 39.5,9.6 40.1,7.9 38.5,6.8 40.4,6.8" fill="#F1C40F"/>
   </g>
 
-  <!-- titles -->
-  <text x="64" y="28" fill="#0D5E42" font-family="system-ui,-apple-system,'PingFang SC','Segoe UI',sans-serif"
-        font-size="20" font-weight="700" letter-spacing="0.06em">问津 · WenJin</text>
-  <text x="64" y="46" fill="#64748B" font-family="system-ui,-apple-system,'PingFang SC','Segoe UI',sans-serif"
-        font-size="11">向道问津，顺溪成程 · 新高考志愿分析</text>
+  <!-- 品牌文字字锁 -->
+  <text x="66" y="28" fill="#0D5E42" font-family="'PingFang SC', 'HarmonyOS Sans SC', system-ui, sans-serif"
+        font-size="20" font-weight="700" letter-spacing="-0.01em">问津 · WenJin</text>
+  <text x="66" y="46" fill="#64748B" font-family="'PingFang SC', 'HarmonyOS Sans SC', system-ui, sans-serif"
+        font-size="12" letter-spacing="0.04em">向道问津，顺溪成程 · 志愿推演</text>
 </svg>

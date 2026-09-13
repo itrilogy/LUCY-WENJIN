@@ -14,8 +14,8 @@ DB = os.path.join(ROOT, "gaokao2025.sqlite")
 
 @pytest.fixture(scope="module", autouse=True)
 def _db_env():
-    if not os.path.exists(DB):
-        pytest.skip("缺少 gaokao2025.sqlite")
+    if not os.path.exists(DB) or os.path.getsize(DB) < 100000:
+        pytest.skip("缺少包含完整数据的 gaokao2025.sqlite")
     os.environ["GAOKAO_DB"] = DB
     # 重置可能已打开的连接
     from core.db import reset_conn

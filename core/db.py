@@ -18,8 +18,96 @@ def get_db_path() -> Path:
     return Path(DB_PATH)
 
 
+def init_schema(conn: sqlite3.Connection) -> None:
+    """确认核心表与索引结构存在（具备新环境自愈能力）。"""
+    ddl_statements = [
+        """CREATE TABLE IF NOT EXISTS college_info (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            logourl TEXT, college_name TEXT, rankTypeShow TEXT,
+            rankType TEXT, rank TEXT, globalRank TEXT, uniqueRank TEXT,
+            province TEXT, city TEXT, location TEXT, school_type TEXT,
+            education TEXT, nature TEXT, batch TEXT, score_city TEXT,
+            score_list TEXT, tag TEXT, logo BLOB
+        )""",
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_college_info_name ON college_info(college_name)",
+        """CREATE TABLE IF NOT EXISTS college_detail (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            school_id TEXT, name TEXT, detail TEXT
+        )""",
+        """CREATE TABLE IF NOT EXISTS schoolscore (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            legalName TEXT, province TEXT, year TEXT, curriculum TEXT,
+            batchName TEXT, enrollType TEXT, minScore TEXT,
+            minScoreOrder TEXT, minCha TEXT, enrollNum TEXT
+        )""",
+        "CREATE INDEX IF NOT EXISTS idx_schoolscore_lookup ON schoolscore(legalName, province, year, curriculum)",
+        """CREATE TABLE IF NOT EXISTS majorscore (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            legalName TEXT, majorName TEXT, province TEXT, year TEXT,
+            curriculum TEXT, batchName TEXT, tags TEXT, minScore TEXT,
+            minScoreOrder TEXT, simpleMajorName TEXT, majorNameDesc TEXT,
+            simplifySpecialCourse TEXT, specialCourse TEXT, majorGroup TEXT
+        )""",
+        "CREATE INDEX IF NOT EXISTS idx_majorscore_lookup ON majorscore(legalName, majorName, year, curriculum)",
+        """CREATE TABLE IF NOT EXISTS college_plan (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            legalName TEXT, major_name TEXT, province TEXT,
+            curriculum TEXT, category TEXT, year TEXT, batch_name TEXT,
+            enroll_num TEXT, tuition TEXT, lengthOfSchooling TEXT,
+            selectSubjects TEXT
+        )""",
+        "CREATE INDEX IF NOT EXISTS idx_college_plan_lookup ON college_plan(legalName, major_name, year, curriculum)",
+        """CREATE TABLE IF NOT EXISTS crawl_skip (
+            school_name TEXT,
+            year TEXT,
+            curriculum TEXT,
+            table_name TEXT,
+            checked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (school_name, year, curriculum, table_name)
+        )""",
+        """CREATE TABLE IF NOT EXISTS shortlist_items (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            session_id TEXT NOT NULL,
+            school TEXT NOT NULL,
+            major TEXT NOT NULL,
+            rank TEXT,
+            score TEXT,
+            tier TEXT,
+            prob TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(session_id, school, major)
+        )""",
+        """CREATE TABLE IF NOT EXISTS official_rank_table (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            province TEXT NOT NULL,
+            year TEXT NOT NULL,
+            curriculum TEXT NOT NULL,
+            score INTEGER NOT NULL,
+            rank_segment INTEGER NOT NULL,
+            rank_accum INTEGER NOT NULL,
+            source TEXT DEFAULT 'baidu',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(province, year, curriculum, score)
+        )""",
+        """CREATE TABLE IF NOT EXISTS prob_calibration (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            province TEXT NOT NULL,
+            curriculum TEXT NOT NULL,
+            k REAL NOT NULL,
+            bias REAL NOT NULL,
+            sigma REAL NOT NULL,
+            n_samples INTEGER NOT NULL,
+            fit_samples INTEGER NOT NULL,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(province, curriculum)
+        )""",
+    ]
+    for ddl in ddl_statements:
+        conn.execute(ddl)
+
+
 def get_conn(db_path: Optional[Union[str, Path]] = None) -> sqlite3.Connection:
-    """进程内单例连接；爬虫与 Web 共用。"""
+    """进程内单例连接；爬虫与 Web 共用。初次连接自动初始化 DDL。"""
     global _conn
     path = str(db_path or DB_PATH)
     with _lock:
@@ -34,6 +122,7 @@ def get_conn(db_path: Optional[Union[str, Path]] = None) -> sqlite3.Connection:
             _conn.execute("PRAGMA journal_mode=WAL")
             _conn.execute("PRAGMA synchronous=NORMAL")
             _conn.execute("PRAGMA foreign_keys=ON")
+            init_schema(_conn)
         return _conn
 
 

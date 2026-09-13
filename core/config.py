@@ -9,6 +9,28 @@ from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 
+
+def _load_env_file(env_path: Path) -> None:
+    """轻量加载 .env 文件，已存在的环境变量优先不覆写。"""
+    if not env_path.is_file():
+        return
+    try:
+        with open(env_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                k, v = line.split("=", 1)
+                k = k.strip()
+                v = v.strip().strip("'\"")
+                if k and k not in os.environ:
+                    os.environ[k] = v
+    except Exception:
+        pass
+
+
+_load_env_file(ROOT_DIR / ".env")
+
 # 数据库：环境变量优先，否则项目根目录下默认文件
 DB_PATH = Path(os.environ.get("GAOKAO_DB", str(ROOT_DIR / "gaokao2025.sqlite")))
 

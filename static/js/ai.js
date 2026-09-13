@@ -111,5 +111,5 @@ function resetAi(){
   fetch('/api/ai/reset',{method:'POST'});
   aiHistory=[];
   document.getElementById('aiChat').innerHTML=
-    '<div style="background:#f0f4ff;padding:10px 14px;border-radius:8px;align-self:flex-start;max-width:85%">💡 你好！我是你的高考志愿助手。支持推荐、专业反查、多校对比与录取概率解释。请问你的高考分数是多少？</div>';
+    '<div class="ai-msg" style="background:var(--bg-sunken);padding:10px 14px;border-radius:var(--radius-sm);align-self:flex-start;max-width:85%;border-left:3px solid var(--color-primary)">你好！我是问津志愿推演助手。支持志愿反查、梯度分布测算、多校横向对比与流式概率评估。请问你的预估成绩、位次或意向专业是什么？</div>';
 }

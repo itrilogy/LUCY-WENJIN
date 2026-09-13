@@ -1,7 +1,7 @@
 <div align="center">
   <img src="static/brand/favicon.svg" width="64" height="64" alt="问津 · WenJin 产品标" />
   &nbsp;&nbsp;
-  <img src="static/brand/luxi-lab-main.svg" width="64" height="64" alt="鹿溪联合创新实验室 LUXI LAB" />
+  <img src="static/brand/luxi-lab.svg" width="64" height="64" alt="鹿溪联合创新实验室 LUXI LAB 符号标" />
 </div>
 
 <h1 align="center">问津 · WenJin（鹿溪志愿）</h1>
@@ -14,8 +14,9 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Matrix-理数%C2%B7三思-0D5E42" alt="matrix" />
   <img src="https://img.shields.io/badge/Product-问津%20WenJin-0D5E42" alt="product" />
+  <img src="https://img.shields.io/badge/Design-LUXI%20v1.1-0D5E42" alt="design" />
+  <img src="https://img.shields.io/badge/Version-v1.3.0-f1c40f" alt="version" />
   <img src="https://img.shields.io/badge/Lab-鹿溪联合创新实验室-047538" alt="lab" />
-  <img src="https://img.shields.io/badge/Based%20on-gaokao2025-6366f1" alt="upstream" />
   <img src="https://img.shields.io/badge/Stack-Flask%20%7C%20SQLite%20%7C%20DeepSeek-blue" alt="stack" />
 </p>
 
@@ -27,6 +28,8 @@
 ---
 
 > 面向江西省高考考生的智能化志愿填报与梯度推演助手。基于开源项目 `gaokao2025`（`qt/topschool/`）改造：原项目提供百度高考 API 与 SQLite 表结构基础；本项目扩展为江西 **3+1+2** Web 应用——查询 + 冲稳保推荐 + AI 分析 + 百度一分一段 + 概率校准。
+> 
+> 本项目前端已全量遵从**《鹿溪设计范式》（LUXI Design System v1.1）**与 `luxi-scenario-kit-final.html` 参考套件规范。
 
 ---
 
@@ -48,16 +51,24 @@
 ## 🚀 快速开始
 
 ```bash
-# 克隆
+# 1. 克隆
 git clone https://github.com/itrilogy/LUCY-WENJIN.git
 cd LUCY-WENJIN
 
-# 依赖（需自备 gaokao2025.sqlite，默认不入库）
+# 2. 安装依赖
 python3 -m pip install -r requirements.txt
 
-# 启动（默认关闭 debug）
+# 3. 环境变量配置（可选，AI 对话需配置 DeepSeek API Key）
+cp .env.example .env
+# 编辑 .env 填入 DEEPSEEK_API_KEY=sk-xxxx
+
+# 4. 数据库说明
+# 支持自愈建表；若需全量历年录取线数据，请导入 gaokao2025.sqlite（默认不入代码库）
+
+# 5. 启动服务（默认端口 5080）
 python3 app.py
 # 或：bash scripts/run_server.sh
+```
 
 # 浏览器
 open http://127.0.0.1:5080
@@ -142,10 +153,12 @@ LUCY-WENJIN/
 ├── core/                  # 配置 · DB · 推荐 · 一分一段 · 校准
 ├── getdata2025.py         # 学校库爬虫
 ├── scripts/               # 一分一段 / 质量 / 探针 / 启动
+├── .env.example           # 环境变量模板
 ├── static/
-│   ├── brand/             # 产品 favicon/logo + 实验室主 LOGO
+│   ├── brand/             # 产品方标/字锁 + 实验室符号标
 │   ├── js/
-│   └── style.css
+│   ├── tokens.css         # 鹿溪设计令牌（LUXI Tokens v1.1）
+│   └── style.css          # 问津现代化轻量样式系统
 ├── templates/index.html
 ├── tests/
 ├── 使用说明.md
@@ -158,13 +171,13 @@ LUCY-WENJIN/
 
 ---
 
-## 🎨 品牌标识
+## 🎨 品牌标识（LUXI Design System v1.1）
 
-| 标识 | 预览 | 说明 | 源文件 |
+| 标识 | 预览 | 规格与说明 | 资源文件 |
 | :---: | :---: | :--- | :--- |
-| **产品方标** | <img src="static/brand/favicon.svg" width="32" height="32" alt="问津" /> | 双枝航道 + 金色落点 + 溪流（鹿溪绿底） | `static/brand/favicon.svg` |
-| **产品字锁** | [`static/brand/logo.svg`](static/brand/logo.svg) | 横版产品字锁 | `static/brand/logo.svg` |
-| **实验室主标** | <img src="static/brand/luxi-lab-main.svg" width="32" height="32" alt="LUXI LAB" /> | 官方 LUXI LAB | `static/brand/luxi-lab-main.svg` |
+| **产品方标** | <img src="static/brand/favicon.svg" width="32" height="32" alt="问津" /> | 48×48 鹿溪绿圆角砖 + 双枝航道 glyph（stroke 1.7） + 水平溪流 + 金星 | `static/brand/favicon.svg` |
+| **产品字锁** | [`static/brand/logo.svg`](static/brand/logo.svg) | 横版产品字锁（方标 + 标准排印） | `static/brand/logo.svg` |
+| **实验室符号标** | <img src="static/brand/luxi-lab.svg" width="32" height="32" alt="LUXI LAB" /> | 角本位符号标（Y + 一横 · 无方框，浅底深绿/深底反白双态） | `static/brand/luxi-lab.svg` |
 
 **色板（LUXI CI）**
 
@@ -207,7 +220,7 @@ LUCY-WENJIN/
 ---
 
 <div align="center">
-  <img src="static/brand/luxi-lab-main.svg" width="48" height="48" alt="LUXI LAB" />
+  <img src="static/brand/luxi-lab.svg" width="48" height="48" alt="LUXI LAB 符号标" />
   <p><strong>问津 · WenJin</strong> · 向道问津，顺溪成程</p>
   <p>© 鹿溪联合创新实验室 · LUXI Joint Innovation Lab</p>
   <p><em>林深见鹿，源启清溪 · Deep Insights, Evolutionary Origin.</em></p>
